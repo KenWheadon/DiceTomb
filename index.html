@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎲 Dice Tomb Roulette ⚰️</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(135deg, #0f0f23, #1a1a2e, #16213e, #0f0f23);
+        background-size: 400% 400%;
+        animation: gradientShift 8s ease infinite;
+        color: #fff;
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      @keyframes gradientShift {
+        0% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+        100% {
+          background-position: 0% 50%;
+        }
+      }
+
+      .game-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .game-header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .game-title {
+        font-size: 3em;
+        background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #ffd93d);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: titleGlow 3s ease-in-out infinite;
+        margin-bottom: 10px;
+      }
+
+      @keyframes titleGlow {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+        50% {
+          background-position: 100% 50%;
+        }
+      }
+
+      .players-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+      }
+
+      .player-area {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 15px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        min-height: 200px;
+      }
+
+      .player-area.active {
+        border-color: #4ecdc4;
+        box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+      }
+
+      .player-area.eliminated {
+        opacity: 0.5;
+        filter: grayscale(70%);
+      }
+
+      .player-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      .player-name {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #4ecdc4;
+      }
+
+      .player-stats {
+        display: flex;
+        gap: 10px;
+        font-size: 0.8em;
+      }
+
+      .stat {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 3px 8px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .lives {
+        color: #ff6b6b;
+      }
+
+      .actions {
+        color: #ffd93d;
+      }
+
+      .dice-collection {
+        margin-bottom: 15px;
+      }
+
+      .dice-collection h4 {
+        font-size: 0.9em;
+        margin-bottom: 8px;
+        color: #ccc;
+      }
+
+      .dice-grid {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .die {
+        width: 100px;
+        height: 100px;
+        background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+        border-radius: 8px;
+        border: 2px solid #666;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .die:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .die.selected {
+        border-color: #4ecdc4;
+        box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+      }
+
+      .die.rolling {
+        animation: rollDie 1s ease-in-out;
+      }
+
+      @keyframes rollDie {
+        0%,
+        100% {
+          transform: rotate(0deg) scale(1);
+        }
+        25% {
+          transform: rotate(90deg) scale(1.1);
+        }
+        50% {
+          transform: rotate(180deg) scale(1.2);
+        }
+        75% {
+          transform: rotate(270deg) scale(1.1);
+        }
+      }
+
+      .die-explosion-chance {
+        position: absolute;
+        top: -3px;
+        right: -3px;
+        background: #ff6b6b;
+        color: white;
+        font-size: 0.6em;
+        padding: 1px 4px;
+        border-radius: 8px;
+        min-width: 16px;
+        text-align: center;
+      }
+
+      .die-name {
+        font-size: 0.3em;
+        position: absolute;
+        bottom: 1px;
+        left: 1px;
+        right: 1px;
+        text-align: center;
+        color: #aaa;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 2px;
+        padding: 1px;
+      }
+
+      .die-result {
+        font-size: 3em;
+        margin-bottom: 2px;
+      }
+
+      .actions-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .shop-button {
+        background: linear-gradient(145deg, #4ecdc4, #3ba89c);
+        border: none;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        font-size: 0.9em;
+      }
+
+      .shop-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 3px 10px rgba(78, 205, 196, 0.3);
+      }
+
+      .shop-button:disabled {
+        background: #666;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .shop-button.affordable {
+        background: linear-gradient(145deg, #ffd93d, #ffb700);
+        color: #000;
+        animation: pulse 2s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 10px rgba(255, 217, 61, 0.3);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(255, 217, 61, 0.6);
+        }
+      }
+
+      .dice-shop {
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 10px;
+        border: 2px solid rgba(255, 217, 61, 0.3);
+        display: none;
+      }
+
+      .dice-shop.open {
+        display: block;
+      }
+
+      .shop-title {
+        color: #ffd93d;
+        font-size: 1.1em;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+
+      .shop-items {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+
+      .shop-item {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .shop-item:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateY(-1px);
+      }
+
+      .shop-item:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .shop-item.affordable {
+        border-color: #4ecdc4;
+        box-shadow: 0 0 10px rgba(78, 205, 196, 0.2);
+      }
+
+      .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 5px;
+      }
+
+      .item-name {
+        font-weight: bold;
+        color: #4ecdc4;
+        font-size: 0.9em;
+      }
+
+      .item-cost {
+        background: rgba(255, 217, 61, 0.2);
+        color: #ffd93d;
+        padding: 2px 6px;
+        border-radius: 10px;
+        font-size: 0.8em;
+        font-weight: bold;
+      }
+
+      .item-details {
+        font-size: 0.8em;
+        color: #ccc;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .item-explosion {
+        color: #ff6b6b;
+      }
+
+      .curse-status-bar {
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        border: 2px solid rgba(255, 107, 107, 0.3);
+      }
+
+      .curse-status-title {
+        text-align: center;
+        color: #ff6b6b;
+        font-size: 1.3em;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+
+      .curse-grid {
+        display: grid;
+        grid-template-columns: 120px repeat(4, 1fr);
+        gap: 10px;
+        align-items: center;
+      }
+
+      .curse-header {
+        font-weight: bold;
+        color: #ff6b6b;
+        text-align: center;
+        padding: 10px;
+        background: rgba(255, 107, 107, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+      }
+
+      .curse-label {
+        font-weight: bold;
+        color: #ccc;
+        text-align: center;
+        font-size: 0.9em;
+      }
+
+      .player-curse-row {
+        display: contents;
+      }
+
+      .player-curse-name {
+        color: #4ecdc4;
+        font-weight: bold;
+        text-align: right;
+        padding-right: 10px;
+      }
+
+      .player-curse-name.current {
+        color: #ffd93d;
+        text-shadow: 0 0 10px rgba(255, 217, 61, 0.5);
+      }
+
+      .player-curse-name.eliminated {
+        color: #666;
+        text-decoration: line-through;
+      }
+
+      .curse-progress {
+        display: flex;
+        gap: 3px;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 6px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .curse-slot {
+        width: 24px;
+        height: 24px;
+        border: 1px solid #666;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9em;
+        background: rgba(0, 0, 0, 0.3);
+      }
+
+      .curse-slot.filled {
+        background: rgba(255, 107, 107, 0.4);
+        border-color: #ff6b6b;
+        box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+      }
+
+      .curse-slot.complete {
+        background: rgba(255, 107, 107, 0.8);
+        border-color: #ff6b6b;
+        box-shadow: 0 0 12px rgba(255, 107, 107, 0.6);
+        animation: pulseRed 1s ease-in-out infinite;
+      }
+
+      @keyframes pulseRed {
+        0%,
+        100% {
+          box-shadow: 0 0 12px rgba(255, 107, 107, 0.6);
+        }
+        50% {
+          box-shadow: 0 0 20px rgba(255, 107, 107, 0.9);
+        }
+      }
+
+      .game-log {
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 10px;
+        padding: 15px;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 20px;
+      }
+
+      .log-entry {
+        margin-bottom: 5px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.05);
+        font-size: 0.9em;
+      }
+
+      .log-entry.explosion {
+        background: rgba(255, 107, 107, 0.2);
+        border-left: 3px solid #ff6b6b;
+      }
+
+      .log-entry.curse {
+        background: rgba(138, 43, 226, 0.2);
+        border-left: 3px solid #8a2be2;
+      }
+
+      .log-entry.positive {
+        background: rgba(78, 205, 196, 0.2);
+        border-left: 3px solid #4ecdc4;
+      }
+
+      .game-over {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+
+      .game-over-content {
+        background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        border: 2px solid #4ecdc4;
+        box-shadow: 0 0 30px rgba(78, 205, 196, 0.3);
+      }
+
+      .winner-text {
+        font-size: 2.5em;
+        color: #4ecdc4;
+        margin-bottom: 20px;
+        text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+      }
+
+      .restart-button {
+        background: linear-gradient(145deg, #ffd93d, #ffb700);
+        color: #000;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 25px;
+        font-size: 1.2em;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+
+      .restart-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(255, 217, 61, 0.3);
+      }
+
+      @media (max-width: 1200px) {
+        .players-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .players-grid {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .game-title {
+          font-size: 2em;
+        }
+
+        .curse-grid {
+          grid-template-columns: 100px repeat(4, 1fr);
+          gap: 5px;
+        }
+
+        .curse-header {
+          padding: 5px;
+          font-size: 0.8em;
+        }
+
+        .player-area {
+          padding: 10px;
+        }
+
+        .die {
+          width: 50px;
+          height: 50px;
+          font-size: 1em;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <div class="game-header">
+        <h1 class="game-title">🎲 DICE TOMB ROULETTE ⚰️</h1>
+        <p>Corrupt your dice for power... but beware the explosion!</p>
+      </div>
+
+      <div class="curse-status-bar">
+        <div class="curse-status-title">
+          💀 CURSE STATUS - 3 symbols trigger effect 💀
+        </div>
+        <div class="curse-grid" id="curseGrid">
+          <!-- Curse status will be generated here -->
+        </div>
+      </div>
+
+      <div class="players-grid" id="playersGrid">
+        <!-- Players will be generated here -->
+      </div>
+
+      <div class="game-log" id="gameLog">
+        <div class="log-entry">
+          Game started! Each player begins with 1 standard die and 3 lives.
+        </div>
+      </div>
+    </div>
+
+    <div class="game-over" id="gameOver" style="display: none">
+      <div class="game-over-content">
+        <div class="winner-text" id="winnerText">Player Wins!</div>
+        <p>Congratulations! You survived the curse of the dice tombs.</p>
+        <button class="restart-button" onclick="initGame()">Play Again</button>
+      </div>
+    </div>
+
+    <script>
+      // Game State
+      let gameState = {
+        currentPlayer: 0,
+        players: [],
+        gameOver: false,
+        turnActionTaken: false,
+        shopOpen: false, // Track if dice shop is open
+      };
+
+      // Dice face symbols
+      const SYMBOLS = {
+        BONE: "🦴",
+        SKULL: "💀",
+        COFFIN: "⚰️",
+        TOMB: "🏺",
+        ACTION1: "①",
+        ACTION2: "②",
+        ACTION3: "③",
+        ACTION4: "④",
+        ACTION5: "⑤",
+        ACTION6: "⑥",
+        ACTION7: "⑦",
+        ACTION8: "⑧",
+        ACTION10: "⑩",
+        ACTION15: "⑮",
+        WILD: "🌟",
+      };
+
+      // Die templates
+      const DIE_TEMPLATES = {
+        STANDARD: {
+          name: "Standard",
+          faces: [
+            SYMBOLS.BONE,
+            SYMBOLS.SKULL,
+            SYMBOLS.COFFIN,
+            SYMBOLS.ACTION1,
+            SYMBOLS.ACTION2,
+            SYMBOLS.ACTION3,
+          ],
+          cost: 0,
+          baseExplosion: 0,
+        },
+        APPRENTICE: {
+          name: "Apprentice",
+          faces: [
+            SYMBOLS.BONE,
+            SYMBOLS.SKULL,
+            SYMBOLS.ACTION2,
+            SYMBOLS.ACTION3,
+            SYMBOLS.ACTION4,
+            SYMBOLS.ACTION5,
+          ],
+          cost: 12,
+          baseExplosion: 0,
+        },
+        MASTER: {
+          name: "Master",
+          faces: [
+            SYMBOLS.BONE,
+            SYMBOLS.SKULL,
+            SYMBOLS.ACTION4,
+            SYMBOLS.ACTION5,
+            SYMBOLS.ACTION6,
+            SYMBOLS.ACTION7,
+          ],
+          cost: 25,
+          baseExplosion: 0,
+        },
+        FORBIDDEN: {
+          name: "Forbidden",
+          faces: [
+            SYMBOLS.BONE,
+            SYMBOLS.SKULL,
+            SYMBOLS.COFFIN,
+            SYMBOLS.TOMB,
+            SYMBOLS.ACTION8,
+            SYMBOLS.ACTION10,
+          ],
+          cost: 25,
+          baseExplosion: 15,
+        },
+      };
+
+      // Curse effects
+      const CURSE_EFFECTS = {
+        [SYMBOLS.BONE]: {
+          name: "Bone Curse",
+          effect: "Lose 5 actions",
+          slotsNeeded: 3,
+        },
+        [SYMBOLS.SKULL]: {
+          name: "Skull Curse",
+          effect: "Turn random die face to skull",
+          slotsNeeded: 3,
+        },
+        [SYMBOLS.COFFIN]: {
+          name: "Coffin Curse",
+          effect: "All opponents gain +3 actions",
+          slotsNeeded: 3,
+        },
+        [SYMBOLS.TOMB]: {
+          name: "Tomb Curse",
+          effect: "All dice +5% explosion chance",
+          slotsNeeded: 3,
+        },
+      };
+
+      class Die {
+        constructor(template, id) {
+          this.id = id;
+          this.template = template;
+          this.faces = [...template.faces];
+          this.explosionChance = template.baseExplosion;
+          this.rollCount = 0;
+          this.lastRoll = null;
+        }
+
+        roll() {
+          this.rollCount++;
+          this.explosionChance += 2; // Increase by 2% per roll
+
+          // Check for explosion
+          if (Math.random() * 100 < this.explosionChance) {
+            this.lastRoll = "💥";
+            return { exploded: true, result: null };
+          }
+
+          const faceIndex = Math.floor(Math.random() * this.faces.length);
+          const result = this.faces[faceIndex];
+          this.lastRoll = result;
+
+          return { exploded: false, result: result };
+        }
+
+        upgradeFace(oldFace, newFace) {
+          const index = this.faces.indexOf(oldFace);
+          if (index !== -1) {
+            this.faces[index] = newFace;
+            this.explosionChance += 5;
+            return true;
+          }
+          return false;
+        }
+
+        addWildFace() {
+          if (this.faces.length < 8) {
+            this.faces.push(SYMBOLS.WILD);
+            this.explosionChance += 10;
+            return true;
+          }
+          return false;
+        }
+      }
+
+      class Player {
+        constructor(name, id, isAI = false) {
+          this.name = name;
+          this.id = id;
+          this.isAI = isAI;
+          this.lives = 3;
+          this.actions = 0;
+          this.dice = [new Die(DIE_TEMPLATES.STANDARD, 0)];
+          this.paytables = this.initPaytables();
+          this.eliminated = false;
+        }
+
+        initPaytables() {
+          const paytables = {};
+          // Only curse paytables now
+          Object.keys(CURSE_EFFECTS).forEach((curse) => {
+            paytables[curse] = [];
+          });
+          return paytables;
+        }
+
+        addCurseSymbol(symbol) {
+          if (this.paytables[symbol]) {
+            this.paytables[symbol].push(symbol);
+
+            // Return whether paytable is ready to trigger
+            return (
+              this.paytables[symbol].length >= CURSE_EFFECTS[symbol].slotsNeeded
+            );
+          }
+          return false;
+        }
+
+        triggerCursePaytable(symbol) {
+          this.triggerCurseEffect(symbol);
+          this.paytables[symbol] = []; // Clear paytable
+        }
+
+        triggerCurseEffect(symbol) {
+          const effect = CURSE_EFFECTS[symbol];
+
+          switch (symbol) {
+            case SYMBOLS.BONE:
+              this.actions = Math.max(0, this.actions - 5);
+              addLog(
+                `${this.name} triggered Bone Curse: Lost 5 actions!`,
+                "curse"
+              );
+              break;
+
+            case SYMBOLS.SKULL:
+              if (this.dice.length > 0) {
+                const randomDie =
+                  this.dice[Math.floor(Math.random() * this.dice.length)];
+                const randomFaceIndex = Math.floor(
+                  Math.random() * randomDie.faces.length
+                );
+                randomDie.faces[randomFaceIndex] = SYMBOLS.SKULL;
+                addLog(
+                  `${this.name} triggered Skull Curse: Random die face turned to skull!`,
+                  "curse"
+                );
+              }
+              break;
+
+            case SYMBOLS.COFFIN:
+              gameState.players.forEach((player) => {
+                if (player.id !== this.id && !player.eliminated) {
+                  player.actions += 3;
+                }
+              });
+              addLog(
+                `${this.name} triggered Coffin Curse: All opponents gained 3 actions!`,
+                "curse"
+              );
+              break;
+
+            case SYMBOLS.TOMB:
+              this.dice.forEach((die) => {
+                die.explosionChance += 5;
+              });
+              addLog(
+                `${this.name} triggered Tomb Curse: All dice explosion chance increased by 5%!`,
+                "curse"
+              );
+              break;
+          }
+        }
+
+        rollSelectedDie(dieIndex) {
+          if (dieIndex < 0 || dieIndex >= this.dice.length) return null;
+
+          const die = this.dice[dieIndex];
+          const rollResult = die.roll();
+
+          if (rollResult.exploded) {
+            // Die exploded but stays in collection
+            this.lives--;
+
+            // Corruption spread
+            this.dice.forEach((remainingDie) => {
+              remainingDie.explosionChance += 5;
+            });
+
+            addLog(
+              `💥 ${this.name}'s ${die.template.name} exploded! Lost 1 life. Remaining dice corrupted.`,
+              "explosion"
+            );
+
+            if (this.lives <= 0) {
+              this.eliminated = true;
+              addLog(`☠️ ${this.name} has been eliminated!`, "explosion");
+            }
+
+            return { exploded: true, result: null };
+          }
+
+          // Process roll result
+          const result = rollResult.result;
+          const completedPaytables = [];
+
+          if (result === SYMBOLS.WILD) {
+            // Wild gives all rewards and curses on the die
+            let totalActions = 0;
+
+            die.faces.forEach((face) => {
+              if (face.match(/[①②③④⑤⑥⑦⑧⑩⑮]/)) {
+                const actionValue = this.getActionValue(face);
+                totalActions += actionValue;
+              } else if (CURSE_EFFECTS[face]) {
+                const isComplete = this.addCurseSymbol(face);
+                if (isComplete) {
+                  completedPaytables.push(face);
+                }
+              }
+            });
+
+            this.actions += totalActions;
+            addLog(
+              `🌟 ${this.name} rolled WILD! Gained ${totalActions} actions and added curse symbols.`
+            );
+          } else if (result.match(/[①②③④⑤⑥⑦⑧⑩⑮]/)) {
+            // Direct action points
+            const actionValue = this.getActionValue(result);
+            this.actions += actionValue;
+            addLog(
+              `${this.name} gained ${actionValue} actions from rolling ${result}`
+            );
+          } else if (CURSE_EFFECTS[result]) {
+            // Curse symbol for paytable
+            const isComplete = this.addCurseSymbol(result);
+
+            if (isComplete) {
+              completedPaytables.push(result);
+              addLog(
+                `${this.name} filled ${CURSE_EFFECTS[result].name} paytable with ${result}!`
+              );
+            } else {
+              addLog(
+                `${this.name} added ${result} to ${CURSE_EFFECTS[result].name} paytable`
+              );
+            }
+          }
+
+          return {
+            exploded: false,
+            result: result,
+            completedPaytables: completedPaytables,
+          };
+        }
+
+        getActionValue(symbol) {
+          const values = {
+            [SYMBOLS.ACTION1]: 1,
+            [SYMBOLS.ACTION2]: 2,
+            [SYMBOLS.ACTION3]: 3,
+            [SYMBOLS.ACTION4]: 4,
+            [SYMBOLS.ACTION5]: 5,
+            [SYMBOLS.ACTION6]: 6,
+            [SYMBOLS.ACTION7]: 7,
+            [SYMBOLS.ACTION8]: 8,
+            [SYMBOLS.ACTION10]: 10,
+            [SYMBOLS.ACTION15]: 15,
+          };
+          return values[symbol] || 0;
+        }
+
+        canAfford(cost) {
+          return this.actions >= cost;
+        }
+
+        spendActions(amount) {
+          if (this.canAfford(amount)) {
+            this.actions -= amount;
+            return true;
+          }
+          return false;
+        }
+
+        buyDie(template) {
+          if (this.spendActions(template.cost)) {
+            const newDie = new Die(template, this.dice.length);
+            this.dice.push(newDie);
+            addLog(
+              `${this.name} bought ${template.name} for ${template.cost} actions`
+            );
+            return true;
+          }
+          return false;
+        }
+
+        canAffordAnyDie() {
+          return this.canAfford(12) || this.canAfford(25); // Cheapest purchasable die is 12
+        }
+      }
+
+      function initGame() {
+        gameState = {
+          currentPlayer: 0,
+          players: [
+            new Player("You", 0, false),
+            new Player("AI Bot 1", 1, true),
+            new Player("AI Bot 2", 2, true),
+            new Player("AI Bot 3", 3, true),
+          ],
+          gameOver: false,
+          turnActionTaken: false,
+          shopOpen: false,
+        };
+
+        document.getElementById("gameOver").style.display = "none";
+        document.getElementById("gameLog").innerHTML =
+          '<div class="log-entry">Game started! You vs 3 AI opponents. Each player begins with 1 standard die and 3 lives.</div>';
+
+        renderGame();
+      }
+
+      function renderGame() {
+        renderCurseStatus();
+        renderPlayers();
+      }
+
+      function renderCurseStatus() {
+        const curseGrid = document.getElementById("curseGrid");
+        const curseTypes = Object.keys(CURSE_EFFECTS);
+
+        curseGrid.innerHTML = `
+                <div class="curse-label">Player</div>
+                ${curseTypes
+                  .map(
+                    (curse) => `
+                    <div class="curse-header">
+                        ${curse}<br>
+                        <span style="font-size: 0.8em; font-weight: normal;">${CURSE_EFFECTS[curse].name}</span>
+                    </div>
+                `
+                  )
+                  .join("")}
+                
+                ${gameState.players
+                  .map(
+                    (player) => `
+                    <div class="player-curse-row">
+                        <div class="player-curse-name ${
+                          player.id === gameState.currentPlayer ? "current" : ""
+                        } ${player.eliminated ? "eliminated" : ""}">
+                            ${player.name}
+                        </div>
+                        ${curseTypes
+                          .map(
+                            (curse) => `
+                            <div class="curse-progress">
+                                ${Array(CURSE_EFFECTS[curse].slotsNeeded)
+                                  .fill()
+                                  .map((_, slotIndex) => {
+                                    const filled =
+                                      player.paytables[curse][slotIndex];
+                                    const isComplete =
+                                      player.paytables[curse].length >=
+                                      CURSE_EFFECTS[curse].slotsNeeded;
+                                    return `
+                                        <div class="curse-slot ${
+                                          filled ? "filled" : ""
+                                        } ${isComplete ? "complete" : ""}">
+                                            ${filled || ""}
+                                        </div>
+                                    `;
+                                  })
+                                  .join("")}
+                            </div>
+                        `
+                          )
+                          .join("")}
+                    </div>
+                `
+                  )
+                  .join("")}
+            `;
+      }
+
+      function renderPlayers() {
+        const playersGrid = document.getElementById("playersGrid");
+        playersGrid.innerHTML = "";
+
+        gameState.players.forEach((player, index) => {
+          const playerArea = document.createElement("div");
+          playerArea.className = `player-area ${
+            index === gameState.currentPlayer ? "active" : ""
+          } ${player.eliminated ? "eliminated" : ""}`;
+
+          playerArea.innerHTML = `
+                    <div class="player-header">
+                        <div class="player-name">${player.name}</div>
+                        <div class="player-stats">
+                            <div class="stat lives">❤️ ${player.lives}</div>
+                            <div class="stat actions">⚡ ${player.actions}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="dice-collection">
+                        <h4>Dice Collection:</h4>
+                        <div class="dice-grid">
+                            ${player.dice
+                              .map(
+                                (die, dieIndex) => `
+                                <div class="die" onclick="rollDie(${
+                                  player.id
+                                }, ${dieIndex})" 
+                                     ${
+                                       index === gameState.currentPlayer &&
+                                       !player.isAI &&
+                                       !gameState.turnActionTaken
+                                         ? ""
+                                         : 'style="pointer-events: none; opacity: 0.7;"'
+                                     }>
+                                    <div class="die-explosion-chance">${
+                                      die.explosionChance
+                                    }%</div>
+                                    <div class="die-result">${
+                                      die.lastRoll || "🎲"
+                                    }</div>
+                                    <div class="die-name">${
+                                      die.template.name
+                                    }</div>
+                                </div>
+                            `
+                              )
+                              .join("")}
+                        </div>
+                    </div>
+                    
+                    ${
+                      index === gameState.currentPlayer &&
+                      !player.eliminated &&
+                      !player.isAI
+                        ? `
+                        <div class="actions-panel">
+                            ${
+                              !gameState.turnActionTaken
+                                ? `
+                                <p style="color: #4ecdc4; margin-bottom: 8px; font-size: 0.8em;">Click a die to roll it:</p>
+                                
+                                <button class="shop-button ${
+                                  player.canAffordAnyDie() ? "affordable" : ""
+                                }" 
+                                        onclick="toggleShop()" 
+                                        ${
+                                          player.canAffordAnyDie()
+                                            ? ""
+                                            : "disabled"
+                                        }>
+                                    🛒 Dice Shop ${
+                                      gameState.shopOpen ? "▲" : "▼"
+                                    }
+                                </button>
+                                
+                                <div class="dice-shop ${
+                                  gameState.shopOpen ? "open" : ""
+                                }">
+                                    <div class="shop-title">🎲 Available Dice 🎲</div>
+                                    <div class="shop-items">
+                                        <div class="shop-item ${
+                                          player.canAfford(12)
+                                            ? "affordable"
+                                            : ""
+                                        }" 
+                                             onclick="buyDie('APPRENTICE')" 
+                                             ${
+                                               player.canAfford(12)
+                                                 ? ""
+                                                 : 'style="pointer-events: none;"'
+                                             }>
+                                            <div class="item-header">
+                                                <div class="item-name">Apprentice Die</div>
+                                                <div class="item-cost">12 ⚡</div>
+                                            </div>
+                                            <div class="item-details">
+                                                <span>Better actions</span>
+                                                <span class="item-explosion">0% base</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="shop-item ${
+                                          player.canAfford(25)
+                                            ? "affordable"
+                                            : ""
+                                        }" 
+                                             onclick="buyDie('MASTER')" 
+                                             ${
+                                               player.canAfford(25)
+                                                 ? ""
+                                                 : 'style="pointer-events: none;"'
+                                             }>
+                                            <div class="item-header">
+                                                <div class="item-name">Master Die</div>
+                                                <div class="item-cost">25 ⚡</div>
+                                            </div>
+                                            <div class="item-details">
+                                                <span>High actions</span>
+                                                <span class="item-explosion">0% base</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="shop-item ${
+                                          player.canAfford(25)
+                                            ? "affordable"
+                                            : ""
+                                        }" 
+                                             onclick="buyDie('FORBIDDEN')" 
+                                             ${
+                                               player.canAfford(25)
+                                                 ? ""
+                                                 : 'style="pointer-events: none;"'
+                                             }>
+                                            <div class="item-header">
+                                                <div class="item-name">Forbidden Die</div>
+                                                <div class="item-cost">25 ⚡</div>
+                                            </div>
+                                            <div class="item-details">
+                                                <span>Extreme power</span>
+                                                <span class="item-explosion">15% base</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `
+                                : `
+                                <p style="color: #ffd93d; font-style: italic; font-size: 0.8em;">Turn action completed. Turn ending automatically...</p>
+                            `
+                            }
+                        </div>
+                    `
+                        : index === gameState.currentPlayer &&
+                          !player.eliminated &&
+                          player.isAI
+                        ? `
+                        <div class="actions-panel">
+                            <p style="color: #4ecdc4; font-style: italic; font-size: 0.8em;">🤖 AI is thinking...</p>
+                        </div>
+                    `
+                        : ""
+                    }
+                `;
+
+          playersGrid.appendChild(playerArea);
+        });
+      }
+
+      function toggleShop() {
+        if (gameState.turnActionTaken) return;
+
+        gameState.shopOpen = !gameState.shopOpen;
+        renderGame();
+      }
+
+      function rollDie(playerId, dieIndex) {
+        if (
+          playerId !== gameState.currentPlayer ||
+          gameState.turnActionTaken ||
+          gameState.players[playerId].isAI ||
+          gameState.gameOver
+        )
+          return;
+
+        const player = gameState.players[playerId];
+
+        // Close shop if open
+        gameState.shopOpen = false;
+
+        // Mark turn action as taken
+        gameState.turnActionTaken = true;
+        renderGame(); // Update UI to show action taken
+
+        // Find the specific die element for animation
+        const playerAreas = document.querySelectorAll(".player-area");
+        const currentPlayerArea = playerAreas[playerId];
+        const diceInThisArea = currentPlayerArea.querySelectorAll(".die");
+        const dieElement = diceInThisArea[dieIndex];
+
+        if (dieElement) {
+          dieElement.classList.add("rolling");
+          setTimeout(() => {
+            dieElement.classList.remove("rolling");
+          }, 600);
+        }
+
+        setTimeout(() => {
+          // Execute roll and immediately update display with result + paytable filling
+          const result = player.rollSelectedDie(dieIndex);
+          renderGame(); // Show die result and filled paytable immediately
+
+          // Check for completed paytables after a brief pause
+          if (
+            result &&
+            result.completedPaytables &&
+            result.completedPaytables.length > 0
+          ) {
+            setTimeout(() => {
+              // Trigger paytable effects
+              result.completedPaytables.forEach((symbol) => {
+                player.triggerCursePaytable(symbol);
+              });
+              renderGame(); // Update display after effects
+
+              checkGameEnd();
+
+              if (!gameState.gameOver) {
+                // Continue to next turn
+                setTimeout(() => {
+                  endTurn();
+                }, 800);
+              }
+            }, 1000);
+          } else {
+            // No paytables completed, proceed directly
+            checkGameEnd();
+
+            if (!gameState.gameOver) {
+              setTimeout(() => {
+                endTurn();
+              }, 800);
+            }
+          }
+        }, 600);
+      }
+
+      function buyDie(templateName) {
+        if (gameState.turnActionTaken) return;
+
+        const player = gameState.players[gameState.currentPlayer];
+        const template = DIE_TEMPLATES[templateName];
+
+        if (player.buyDie(template)) {
+          gameState.turnActionTaken = true;
+          gameState.shopOpen = false; // Close shop after purchase
+          renderGame();
+
+          checkGameEnd();
+
+          if (!gameState.gameOver) {
+            // Auto-end turn after action
+            setTimeout(() => {
+              endTurn();
+            }, 800);
+          }
+        }
+      }
+
+      function endTurn() {
+        gameState.turnActionTaken = false; // Reset for next player
+        gameState.shopOpen = false; // Close shop for next player
+
+        // Move to next active player
+        do {
+          gameState.currentPlayer =
+            (gameState.currentPlayer + 1) % gameState.players.length;
+        } while (gameState.players[gameState.currentPlayer].eliminated);
+
+        addLog(
+          `--- ${gameState.players[gameState.currentPlayer].name}'s turn ---`
+        );
+        renderGame();
+
+        // If it's an AI player's turn, execute AI logic
+        if (
+          gameState.players[gameState.currentPlayer].isAI &&
+          !gameState.gameOver
+        ) {
+          setTimeout(() => {
+            executeAITurn();
+          }, 1200);
+        }
+      }
+
+      function executeAITurn() {
+        const aiPlayer = gameState.players[gameState.currentPlayer];
+
+        if (aiPlayer.eliminated || gameState.gameOver) return;
+
+        // AI Decision Logic
+        const canBuyApprentice = aiPlayer.canAfford(12);
+        const canBuyMaster = aiPlayer.canAfford(25);
+        const canBuyForbidden = aiPlayer.canAfford(25);
+
+        // AI Strategy: Early game focus on dice collection, late game focus on rolling
+        const totalDice = aiPlayer.dice.length;
+        const avgExplosionChance =
+          aiPlayer.dice.reduce((sum, die) => sum + die.explosionChance, 0) /
+          totalDice;
+
+        let action = null;
+
+        // Decision tree based on AI strategy
+        if (totalDice < 2 && canBuyApprentice) {
+          // Early game: buy more dice
+          action = () => {
+            aiPlayer.buyDie(DIE_TEMPLATES.APPRENTICE);
+            addLog(`${aiPlayer.name} bought an Apprentice Die`);
+          };
+        } else if (aiPlayer.actions >= 40 && canBuyMaster && totalDice < 3) {
+          // Mid game: upgrade to better dice
+          action = () => {
+            aiPlayer.buyDie(DIE_TEMPLATES.MASTER);
+            addLog(`${aiPlayer.name} bought a Master Die`);
+          };
+        } else if (
+          aiPlayer.actions >= 30 &&
+          canBuyForbidden &&
+          Math.random() < 0.3
+        ) {
+          // High risk play: buy forbidden die
+          action = () => {
+            aiPlayer.buyDie(DIE_TEMPLATES.FORBIDDEN);
+            addLog(`${aiPlayer.name} bought a Forbidden Die`);
+          };
+        } else {
+          // Default: roll a die
+          // Choose die with balance of reward potential vs explosion risk
+          let bestDie = 0;
+          let bestScore = -1;
+
+          aiPlayer.dice.forEach((die, index) => {
+            // Score based on reward potential minus explosion risk
+            const actionFaces = die.faces.filter((face) =>
+              face.match(/[①②③④⑤⑥⑦⑧⑩⑮]/)
+            );
+            const rewardPotential = actionFaces.reduce(
+              (sum, face) => sum + aiPlayer.getActionValue(face),
+              0
+            );
+            const explosionPenalty = die.explosionChance / 10; // Less penalty for explosion
+            const score = rewardPotential - explosionPenalty;
+
+            if (score > bestScore) {
+              bestScore = score;
+              bestDie = index;
+            }
+          });
+
+          action = () => {
+            const result = aiPlayer.rollSelectedDie(bestDie);
+            addLog(
+              `${aiPlayer.name} rolled their ${aiPlayer.dice[bestDie].template.name}`
+            );
+
+            // Handle paytable completion for AI
+            if (
+              result &&
+              result.completedPaytables &&
+              result.completedPaytables.length > 0
+            ) {
+              setTimeout(() => {
+                result.completedPaytables.forEach((symbol) => {
+                  aiPlayer.triggerCursePaytable(symbol);
+                });
+                renderGame();
+              }, 1000);
+            }
+          };
+        }
+
+        // Execute the chosen action
+        if (action) {
+          gameState.turnActionTaken = true;
+          action();
+
+          renderGame();
+
+          checkGameEnd();
+
+          if (!gameState.gameOver) {
+            setTimeout(() => {
+              endTurn();
+            }, 1200);
+          }
+        }
+      }
+
+      function checkGameEnd() {
+        const alivePlayers = gameState.players.filter((p) => !p.eliminated);
+
+        if (alivePlayers.length <= 1) {
+          gameState.gameOver = true;
+
+          const winner = alivePlayers[0];
+          if (winner) {
+            document.getElementById(
+              "winnerText"
+            ).textContent = `${winner.name} Wins!`;
+            addLog(`🏆 ${winner.name} is the last survivor!`, "explosion");
+          } else {
+            document.getElementById("winnerText").textContent =
+              "Everyone Died!";
+            addLog(`💀 All players have been eliminated!`, "explosion");
+          }
+
+          document.getElementById("gameOver").style.display = "flex";
+        }
+      }
+
+      function addLog(message, type = "") {
+        const gameLog = document.getElementById("gameLog");
+        const logEntry = document.createElement("div");
+        logEntry.className = `log-entry ${type}`;
+        logEntry.textContent = message;
+
+        gameLog.appendChild(logEntry);
+        gameLog.scrollTop = gameLog.scrollHeight;
+      }
+
+      // Initialize game on load
+      document.addEventListener("DOMContentLoaded", initGame);
+    </script>
+  </body>
+</html>
