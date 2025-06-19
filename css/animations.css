@@ -1,0 +1,160 @@
+/* Animations and Transitions */
+
+/* Dice Rolling Animation */
+.die.rolling {
+  animation: rollDie 0.4s ease-in-out;
+  transform: scale(1.1);
+}
+
+@keyframes rollDie {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(90deg) scale(1.1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.2);
+  }
+  75% {
+    transform: rotate(270deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(255, 217, 61, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 217, 61, 0.6);
+  }
+}
+
+@keyframes pulseRed {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(255, 107, 107, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 107, 107, 0.9);
+  }
+}
+
+/* Player Elimination Animation */
+.elimination-animation {
+  animation: eliminationShake 1s ease-in-out;
+  filter: grayscale(100%) brightness(0.5);
+}
+
+@keyframes eliminationShake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Curse Effect Animations */
+.curse-effect-bone {
+  animation: boneEffect 2s ease-in-out;
+}
+
+@keyframes boneEffect {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    border-color: rgba(139, 69, 19, 0.8);
+    box-shadow: 0 0 20px rgba(139, 69, 19, 0.5);
+  }
+}
+
+.curse-effect-skull {
+  animation: skullEffect 2s ease-in-out;
+}
+
+@keyframes skullEffect {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    border-color: rgba(128, 128, 128, 0.8);
+    box-shadow: 0 0 20px rgba(128, 128, 128, 0.5);
+  }
+}
+
+.curse-effect-coffin {
+  animation: coffinEffect 2s ease-in-out;
+}
+
+@keyframes coffinEffect {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    border-color: rgba(101, 67, 33, 0.8);
+    box-shadow: 0 0 20px rgba(101, 67, 33, 0.5);
+  }
+}
+
+.curse-effect-tomb {
+  animation: tombEffect 2s ease-in-out;
+}
+
+@keyframes tombEffect {
+  0%, 100% {
+    border-color: rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    border-color: rgba(160, 82, 45, 0.8);
+    box-shadow: 0 0 20px rgba(160, 82, 45, 0.5);
+  }
+}
+
+/* Shop Toggle Animation */
+.dice-shop {
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+  max-height: 0;
+  opacity: 0;
+}
+
+.dice-shop.open {
+  max-height: 500px;
+  opacity: 1;
+}
+
+/* Hover and Focus Animations */
+.player-area {
+  transition: all 0.3s ease;
+}
+
+.shop-item {
+  transition: all 0.3s ease;
+}
+
+.die {
+  transition: all 0.3s ease;
+}
+
+/* Loading/Thinking Animation */
+.ai-thinking {
+  animation: thinking 1.5s ease-in-out infinite;
+}
+
+@keyframes thinking {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}

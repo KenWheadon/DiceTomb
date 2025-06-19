@@ -1,0 +1,179 @@
+/* Game-Specific Layout */
+
+.players-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.player-name {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #4ecdc4;
+}
+
+.player-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 0.8em;
+}
+
+.dice-collection {
+  margin-bottom: 15px;
+}
+
+.dice-collection h4 {
+  font-size: 0.9em;
+  margin-bottom: 8px;
+  color: #ccc;
+}
+
+.dice-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.actions-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Curse Status Layout */
+.curse-status-bar {
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 2px solid rgba(255, 107, 107, 0.3);
+}
+
+.curse-status-title {
+  text-align: center;
+  color: #ff6b6b;
+  font-size: 1.3em;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.curse-grid {
+  display: grid;
+  grid-template-columns: 120px repeat(4, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.curse-header {
+  font-weight: bold;
+  color: #ff6b6b;
+  text-align: center;
+  padding: 10px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+
+.curse-label {
+  font-weight: bold;
+  color: #ccc;
+  text-align: center;
+  font-size: 0.9em;
+}
+
+.player-curse-row {
+  display: contents;
+}
+
+.player-curse-name {
+  color: #4ecdc4;
+  font-weight: bold;
+  text-align: right;
+  padding-right: 10px;
+}
+
+.player-curse-name.current {
+  color: #ffd93d;
+  text-shadow: 0 0 10px rgba(255, 217, 61, 0.5);
+}
+
+.player-curse-name.eliminated {
+  color: #666;
+  text-decoration: line-through;
+}
+
+.curse-progress {
+  display: flex;
+  gap: 3px;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.curse-slot {
+  width: 24px;
+  height: 24px;
+  border: 1px solid #666;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.curse-slot.filled {
+  background: rgba(255, 107, 107, 0.4);
+  border-color: #ff6b6b;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+}
+
+.curse-slot.complete {
+  background: rgba(255, 107, 107, 0.8);
+  border-color: #ff6b6b;
+  box-shadow: 0 0 12px rgba(255, 107, 107, 0.6);
+  animation: pulseRed 1s ease-in-out infinite;
+}
+
+/* Game Over Layout */
+.game-over {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.game-over-content {
+  background: linear-gradient(145deg, #2a2a4a, #1a1a3a);
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  border: 2px solid #4ecdc4;
+  box-shadow: 0 0 30px rgba(78, 205, 196, 0.3);
+}
+
+.winner-text {
+  font-size: 2.5em;
+  color: #4ecdc4;
+  margin-bottom: 20px;
+  text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+}

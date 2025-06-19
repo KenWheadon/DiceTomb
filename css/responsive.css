@@ -1,0 +1,315 @@
+/* Mobile and Responsive Styles */
+
+@media (max-width: 1200px) {
+  .players-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .curse-grid {
+    grid-template-columns: 100px repeat(4, 1fr);
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .players-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .game-title {
+    font-size: 2em;
+  }
+
+  .curse-grid {
+    grid-template-columns: 80px repeat(4, 1fr);
+    gap: 5px;
+    font-size: 0.9em;
+  }
+
+  .curse-header {
+    padding: 5px;
+    font-size: 0.8em;
+  }
+
+  .player-area {
+    padding: 10px;
+    min-height: auto;
+  }
+  
+  .player-header {
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .player-stats {
+    justify-content: center;
+  }
+
+  .die {
+    width: 60px;
+    height: 60px;
+    font-size: 1em;
+  }
+  
+  .die-result {
+    font-size: 2em;
+  }
+  
+  .die-explosion-chance {
+    font-size: 0.5em;
+  }
+
+  .dice-grid {
+    gap: 6px;
+  }
+
+  /* Mobile toast adjustments */
+  .toast-container {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+  .toast {
+    margin: 0;
+    padding: 12px;
+  }
+
+  .toast-message {
+    font-size: 0.8em;
+  }
+  
+  .toast-icon {
+    font-size: 1.2em;
+  }
+
+  /* Mobile shop adjustments */
+  .shop-items {
+    gap: 6px;
+  }
+  
+  .shop-item {
+    padding: 8px;
+  }
+  
+  .item-header {
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-start;
+  }
+  
+  .item-details {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  /* Mobile game over screen */
+  .game-over-content {
+    padding: 20px;
+    margin: 20px;
+  }
+  
+  .winner-text {
+    font-size: 2em;
+  }
+}
+
+@media (max-width: 480px) {
+  .game-container {
+    padding: 10px;
+  }
+  
+  .game-title {
+    font-size: 1.5em;
+  }
+  
+  .curse-status-bar {
+    padding: 15px;
+  }
+  
+  .curse-grid {
+    grid-template-columns: 60px repeat(4, 1fr);
+    gap: 3px;
+    font-size: 0.8em;
+  }
+  
+  .curse-slot {
+    width: 18px;
+    height: 18px;
+    font-size: 0.7em;
+  }
+  
+  .die {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .die-result {
+    font-size: 1.8em;
+  }
+  
+  .player-area {
+    padding: 8px;
+  }
+  
+  .toast {
+    padding: 10px;
+  }
+  
+  .toast-message {
+    font-size: 0.75em;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .die {
+    border-width: 1px;
+  }
+  
+  .toast {
+    border-width: 1px;
+  }
+  
+  .player-area {
+    border-width: 1px;
+  }
+}
+
+/* Landscape mobile orientation */
+@media (max-width: 768px) and (orientation: landscape) {
+  .players-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .game-title {
+    font-size: 1.8em;
+    margin-bottom: 15px;
+  }
+  
+  .curse-status-bar {
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+  
+  .game-container {
+    padding: 15px;
+  }
+}
+
+/* Tablet-specific adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .players-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+  
+  .die {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .die-result {
+    font-size: 2.2em;
+  }
+  
+  .curse-grid {
+    grid-template-columns: 110px repeat(4, 1fr);
+  }
+  
+  .toast-container {
+    max-width: 350px;
+  }
+}
+
+/* Large desktop adjustments */
+@media (min-width: 1400px) {
+  .game-container {
+    max-width: 1600px;
+  }
+  
+  .players-grid {
+    gap: 20px;
+  }
+  
+  .die {
+    width: 120px;
+    height: 120px;
+    font-size: 1.3em;
+  }
+  
+  .die-result {
+    font-size: 3em;
+  }
+  
+  .player-area {
+    padding: 20px;
+  }
+  
+  .curse-grid {
+    grid-template-columns: 140px repeat(4, 1fr);
+    gap: 15px;
+  }
+}
+
+/* Print styles (if needed for debugging) */
+@media print {
+  .toast-container,
+  .game-over {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .player-area {
+    border: 1px solid black !important;
+    background: white !important;
+  }
+}
+
+/* Accessibility - Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .die.rolling {
+    animation: none;
+    transform: scale(1.05);
+  }
+  
+  .toast {
+    transition: opacity 0.2s ease;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .player-area {
+    border-width: 3px;
+  }
+  
+  .die {
+    border-width: 3px;
+    background: #000;
+    color: #fff;
+  }
+  
+  .toast {
+    border-width: 2px;
+    background: #000;
+    color: #fff;
+  }
+  
+  .shop-button {
+    border: 2px solid currentColor;
+  }
+}
