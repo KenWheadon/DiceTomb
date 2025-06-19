@@ -4,9 +4,71 @@ let gameState = {
   players: [],
   gameOver: false,
   turnActionTaken: false,
-  shopOpen: false, // Track if dice shop is open
-  turnCount: 0, // Track game progression
+  shopOpen: false,
+  turnCount: 0,
 };
+
+// Toast notification system
+class ToastManager {
+  constructor() {
+    this.toastContainer = null;
+    this.createContainer();
+  }
+
+  createContainer() {
+    this.toastContainer = document.createElement("div");
+    this.toastContainer.className = "toast-container";
+    document.body.appendChild(this.toastContainer);
+  }
+
+  show(message, type = "info", duration = 3000) {
+    const toast = document.createElement("div");
+    toast.className = `toast toast-${type}`;
+
+    // Add icon based on type
+    const icons = {
+      info: "💬",
+      success: "✅",
+      warning: "⚠️",
+      error: "❌",
+      explosion: "💥",
+      curse: "💀",
+      purchase: "🛒",
+      action: "⚡",
+    };
+
+    toast.innerHTML = `
+      <div class="toast-icon">${icons[type] || icons.info}</div>
+      <div class="toast-message">${message}</div>
+      <div class="toast-close" onclick="this.parentElement.remove()">×</div>
+    `;
+
+    this.toastContainer.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => toast.classList.add("toast-show"), 10);
+
+    // Auto remove
+    setTimeout(() => {
+      toast.classList.add("toast-hide");
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.remove();
+        }
+      }, 300);
+    }, duration);
+
+    return toast;
+  }
+
+  clear() {
+    if (this.toastContainer) {
+      this.toastContainer.innerHTML = "";
+    }
+  }
+}
+
+const toastManager = new ToastManager();
 
 class Die {
   constructor(template, id) {
@@ -70,12 +132,11 @@ class Player {
     ];
     this.paytables = this.initPaytables();
     this.eliminated = false;
-    this.aggressionLevel = 1.0; // New: AI personality modifier
+    this.aggressionLevel = 1.0;
   }
 
   initPaytables() {
     const paytables = {};
-    // Only curse paytables now
     Object.keys(CURSE_EFFECTS).forEach((curse) => {
       paytables[curse] = [];
     });
@@ -85,8 +146,6 @@ class Player {
   addCurseSymbol(symbol) {
     if (this.paytables[symbol]) {
       this.paytables[symbol].push(symbol);
-
-      // Return whether paytable is ready to trigger
       return this.paytables[symbol].length >= CURSE_EFFECTS[symbol].slotsNeeded;
     }
     return false;
@@ -94,7 +153,7 @@ class Player {
 
   triggerCursePaytable(symbol) {
     this.triggerCurseEffect(symbol);
-    this.paytables[symbol] = []; // Clear paytable
+    this.paytables[symbol] = [];
   }
 
   triggerCurseEffect(symbol) {
@@ -103,9 +162,10 @@ class Player {
     switch (symbol) {
       case SYMBOLS.BONE:
         this.actions = Math.max(0, this.actions - effect.actionLoss);
-        addLog(
+        toastManager.show(
           `${this.name} triggered ${effect.name}: Lost ${effect.actionLoss} actions!`,
-          "curse"
+          "curse",
+          4000
         );
         break;
 
@@ -117,9 +177,10 @@ class Player {
             Math.random() * randomDie.faces.length
           );
           randomDie.faces[randomFaceIndex] = effect.replacementSymbol;
-          addLog(
+          toastManager.show(
             `${this.name} triggered ${effect.name}: Random die face turned to skull!`,
-            "curse"
+            "curse",
+            4000
           );
         }
         break;
@@ -130,9 +191,10 @@ class Player {
             player.actions += effect.opponentActionGain;
           }
         });
-        addLog(
+        toastManager.show(
           `${this.name} triggered ${effect.name}: All opponents gained ${effect.opponentActionGain} actions!`,
-          "curse"
+          "curse",
+          4000
         );
         break;
 
@@ -140,9 +202,10 @@ class Player {
         this.dice.forEach((die) => {
           die.explosionChance += effect.explosionIncrease;
         });
-        addLog(
+        toastManager.show(
           `${this.name} triggered ${effect.name}: All dice explosion chance increased by ${effect.explosionIncrease}%!`,
-          "curse"
+          "curse",
+          4000
         );
         break;
     }
@@ -155,34 +218,35 @@ class Player {
     const rollResult = die.roll();
 
     if (rollResult.exploded) {
-      // Die exploded but stays in collection
       this.lives--;
 
-      // Corruption spread
       this.dice.forEach((remainingDie) => {
         remainingDie.explosionChance +=
           GAME_CONFIG.DICE_MECHANICS.corruptionSpreadAmount;
       });
 
-      addLog(
+      toastManager.show(
         `💥 ${this.name}'s ${die.template.name} exploded! Lost 1 life. Remaining dice corrupted.`,
-        "explosion"
+        "explosion",
+        5000
       );
 
       if (this.lives <= 0) {
         this.eliminated = true;
-        addLog(`☠️ ${this.name} has been eliminated!`, "explosion");
+        toastManager.show(
+          `☠️ ${this.name} has been eliminated!`,
+          "explosion",
+          6000
+        );
       }
 
       return { exploded: true, result: null };
     }
 
-    // Process roll result
     const result = rollResult.result;
     const completedPaytables = [];
 
     if (result === SYMBOLS.WILD) {
-      // Wild gives all rewards and curses on the die
       let totalActions = 0;
 
       die.faces.forEach((face) => {
@@ -198,28 +262,34 @@ class Player {
       });
 
       this.actions += totalActions;
-      addLog(
-        `🌟 ${this.name} rolled WILD! Gained ${totalActions} actions and added curse symbols.`
+      toastManager.show(
+        `🌟 ${this.name} rolled WILD! Gained ${totalActions} actions and added curse symbols.`,
+        "success",
+        4000
       );
     } else if (result.match(/[①②③④⑤⑥⑦⑧⑩⑮]/)) {
-      // Direct action points
       const actionValue = this.getActionValue(result);
       this.actions += actionValue;
-      addLog(
-        `${this.name} gained ${actionValue} actions from rolling ${result}`
+      toastManager.show(
+        `${this.name} gained ${actionValue} actions from rolling ${result}`,
+        "action",
+        2500
       );
     } else if (CURSE_EFFECTS[result]) {
-      // Curse symbol for paytable
       const isComplete = this.addCurseSymbol(result);
 
       if (isComplete) {
         completedPaytables.push(result);
-        addLog(
-          `${this.name} filled ${CURSE_EFFECTS[result].name} paytable with ${result}!`
+        toastManager.show(
+          `${this.name} filled ${CURSE_EFFECTS[result].name} paytable with ${result}!`,
+          "warning",
+          4000
         );
       } else {
-        addLog(
-          `${this.name} added ${result} to ${CURSE_EFFECTS[result].name} paytable`
+        toastManager.show(
+          `${this.name} added ${result} to ${CURSE_EFFECTS[result].name} paytable`,
+          "info",
+          2000
         );
       }
     }
@@ -251,8 +321,10 @@ class Player {
     if (this.spendActions(template.cost)) {
       const newDie = new Die(template, this.dice.length);
       this.dice.push(newDie);
-      addLog(
-        `${this.name} bought ${template.name} for ${template.cost} actions`
+      toastManager.show(
+        `${this.name} bought ${template.name} for ${template.cost} actions`,
+        "purchase",
+        3000
       );
       return true;
     }
@@ -260,7 +332,6 @@ class Player {
   }
 
   canAffordAnyDie() {
-    // Find cheapest purchasable die
     const purchasableDice = Object.values(DIE_TEMPLATES).filter(
       (template) => template.cost > 0
     );
@@ -271,25 +342,45 @@ class Player {
   }
 }
 
-// Centralized dice animation function
+// Enhanced dice animation function with better AI support
 function animateDieRoll(playerId, dieIndex, callback) {
-  const playerAreas = document.querySelectorAll(".player-area");
-  const currentPlayerArea = playerAreas[playerId];
-  const diceInThisArea = currentPlayerArea.querySelectorAll(".die");
-  const dieElement = diceInThisArea[dieIndex];
+  // Force a render update first to ensure DOM is current
+  renderGame();
 
-  if (dieElement) {
-    dieElement.classList.add("rolling");
-    setTimeout(() => {
-      dieElement.classList.remove("rolling");
+  // Small delay to ensure DOM is updated
+  setTimeout(() => {
+    const playerAreas = document.querySelectorAll(".player-area");
+    if (playerId >= playerAreas.length) {
+      console.warn(`Player area ${playerId} not found`);
       if (callback) callback();
-    }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
-  } else {
-    // Fallback if element not found
-    setTimeout(() => {
+      return;
+    }
+
+    const currentPlayerArea = playerAreas[playerId];
+    const diceInThisArea = currentPlayerArea.querySelectorAll(".die");
+
+    if (dieIndex >= diceInThisArea.length) {
+      console.warn(`Die ${dieIndex} not found in player ${playerId} area`);
       if (callback) callback();
-    }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
-  }
+      return;
+    }
+
+    const dieElement = diceInThisArea[dieIndex];
+
+    if (dieElement) {
+      dieElement.classList.add("rolling");
+
+      setTimeout(() => {
+        dieElement.classList.remove("rolling");
+        if (callback) callback();
+      }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
+    } else {
+      console.warn(
+        `Die element not found for player ${playerId}, die ${dieIndex}`
+      );
+      if (callback) callback();
+    }
+  }, 50); // Small delay to ensure DOM update
 }
 
 function initGame() {
@@ -313,8 +404,12 @@ function initGame() {
   gameState.players[3].aggressionLevel = 1.0; // Balanced
 
   document.getElementById("gameOver").style.display = "none";
-  document.getElementById("gameLog").innerHTML =
-    '<div class="log-entry">Game started! You vs 3 AI opponents. Each player begins with 1 standard die, 3 lives, and 8 actions!</div>';
+  toastManager.clear();
+  toastManager.show(
+    "Game started! You vs 3 AI opponents. Each player begins with 1 standard die, 3 lives, and 8 actions!",
+    "success",
+    5000
+  );
 
   renderGame();
 }
@@ -392,7 +487,6 @@ function renderPlayers() {
       index === gameState.currentPlayer ? "active" : ""
     } ${player.eliminated ? "eliminated" : ""}`;
 
-    // Build dice shop HTML with new Journeyman tier
     const diceShopHTML = `
       <div class="dice-shop ${gameState.shopOpen ? "open" : ""}">
         <div class="shop-title">🎲 Available Dice 🎲</div>
@@ -514,7 +608,6 @@ function renderPlayers() {
 
 function toggleShop() {
   if (gameState.turnActionTaken) return;
-
   gameState.shopOpen = !gameState.shopOpen;
   renderGame();
 }
@@ -529,44 +622,34 @@ function rollDie(playerId, dieIndex) {
     return;
 
   const player = gameState.players[playerId];
-
-  // Close shop if open
   gameState.shopOpen = false;
-
-  // Mark turn action as taken
   gameState.turnActionTaken = true;
-  renderGame(); // Update UI to show action taken
+  renderGame();
 
-  // Use centralized animation function
   animateDieRoll(playerId, dieIndex, () => {
-    // Execute roll and immediately update display with result + paytable filling
     const result = player.rollSelectedDie(dieIndex);
-    renderGame(); // Show die result and filled paytable immediately
+    renderGame();
 
-    // Check for completed paytables after a brief pause
     if (
       result &&
       result.completedPaytables &&
       result.completedPaytables.length > 0
     ) {
       setTimeout(() => {
-        // Trigger paytable effects
         result.completedPaytables.forEach((symbol) => {
           player.triggerCursePaytable(symbol);
         });
-        renderGame(); // Update display after effects
+        renderGame();
 
         checkGameEnd();
 
         if (!gameState.gameOver) {
-          // Continue to next turn
           setTimeout(() => {
             endTurn();
           }, GAME_CONFIG.GAME_FLOW.animationDelays.turnTransition);
         }
       }, GAME_CONFIG.GAME_FLOW.animationDelays.payTableEffect);
     } else {
-      // No paytables completed, proceed directly
       checkGameEnd();
 
       if (!gameState.gameOver) {
@@ -586,13 +669,12 @@ function buyDie(templateName) {
 
   if (player.buyDie(template)) {
     gameState.turnActionTaken = true;
-    gameState.shopOpen = false; // Close shop after purchase
+    gameState.shopOpen = false;
     renderGame();
 
     checkGameEnd();
 
     if (!gameState.gameOver) {
-      // Auto-end turn after action
       setTimeout(() => {
         endTurn();
       }, GAME_CONFIG.GAME_FLOW.animationDelays.turnTransition);
@@ -601,24 +683,26 @@ function buyDie(templateName) {
 }
 
 function endTurn() {
-  gameState.turnActionTaken = false; // Reset for next player
-  gameState.shopOpen = false; // Close shop for next player
+  gameState.turnActionTaken = false;
+  gameState.shopOpen = false;
 
-  // Move to next active player
   do {
     gameState.currentPlayer =
       (gameState.currentPlayer + 1) % gameState.players.length;
   } while (gameState.players[gameState.currentPlayer].eliminated);
 
-  // Increment turn counter when it returns to player 0
   if (gameState.currentPlayer === 0) {
     gameState.turnCount++;
   }
 
-  addLog(`--- ${gameState.players[gameState.currentPlayer].name}'s turn ---`);
+  toastManager.show(
+    `${gameState.players[gameState.currentPlayer].name}'s turn`,
+    "info",
+    2000
+  );
+
   renderGame();
 
-  // If it's an AI player's turn, execute AI logic
   if (gameState.players[gameState.currentPlayer].isAI && !gameState.gameOver) {
     setTimeout(() => {
       executeAITurn();
@@ -631,28 +715,22 @@ function executeAITurn() {
 
   if (aiPlayer.eliminated || gameState.gameOver) return;
 
-  // Update AI aggression based on game state
   const gameProgression = Math.min(gameState.turnCount / 10, 1.0);
   const currentAggression =
     aiPlayer.aggressionLevel *
     (1 + gameProgression * GAME_CONFIG.AI_SETTINGS.aggressionMultiplier);
 
-  // AI Decision Logic - More sophisticated
   const canBuyApprentice = aiPlayer.canAfford(DIE_TEMPLATES.APPRENTICE.cost);
   const canBuyJourneyman = aiPlayer.canAfford(DIE_TEMPLATES.JOURNEYMAN.cost);
   const canBuyMaster = aiPlayer.canAfford(DIE_TEMPLATES.MASTER.cost);
   const canBuyForbidden = aiPlayer.canAfford(DIE_TEMPLATES.FORBIDDEN.cost);
 
   const totalDice = aiPlayer.dice.length;
-  const avgExplosionChance =
-    aiPlayer.dice.reduce((sum, die) => sum + die.explosionChance, 0) /
-    totalDice;
 
   let action = null;
 
-  // More dynamic decision making
+  // AI Decision making
   if (totalDice < GAME_CONFIG.AI_SETTINGS.maxDiceTarget * currentAggression) {
-    // Prioritize dice collection based on aggression and resources
     if (
       canBuyForbidden &&
       aiPlayer.actions >= 35 &&
@@ -661,7 +739,6 @@ function executeAITurn() {
     ) {
       action = () => {
         aiPlayer.buyDie(DIE_TEMPLATES.FORBIDDEN);
-        addLog(`${aiPlayer.name} bought a Forbidden Die`);
       };
     } else if (
       canBuyMaster &&
@@ -669,29 +746,24 @@ function executeAITurn() {
     ) {
       action = () => {
         aiPlayer.buyDie(DIE_TEMPLATES.MASTER);
-        addLog(`${aiPlayer.name} bought a Master Die`);
       };
     } else if (canBuyJourneyman && aiPlayer.actions >= 15) {
       action = () => {
         aiPlayer.buyDie(DIE_TEMPLATES.JOURNEYMAN);
-        addLog(`${aiPlayer.name} bought a Journeyman Die`);
       };
     } else if (canBuyApprentice) {
       action = () => {
         aiPlayer.buyDie(DIE_TEMPLATES.APPRENTICE);
-        addLog(`${aiPlayer.name} bought an Apprentice Die`);
       };
     }
   }
 
   // If no dice purchase, roll a die
   if (!action) {
-    // Smarter die selection
     let bestDie = 0;
     let bestScore = -1000;
 
     aiPlayer.dice.forEach((die, index) => {
-      // Calculate expected value
       const actionFaces = die.faces.filter(
         (face) => GAME_CONFIG.ACTION_VALUES[face]
       );
@@ -701,12 +773,10 @@ function executeAITurn() {
           0
         ) / die.faces.length;
 
-      // Risk assessment
       const explosionPenalty =
-        die.explosionChance * 0.1 * (2 - currentAggression); // Aggressive AI cares less about explosion
-      const score = avgActionValue - explosionPenalty;
+        die.explosionChance * 0.1 * (2 - currentAggression);
+      let score = avgActionValue - explosionPenalty;
 
-      // Conservative AI avoids high explosion dice
       if (
         die.explosionChance > GAME_CONFIG.AI_SETTINGS.conservativeThreshold &&
         currentAggression < 1.0
@@ -721,16 +791,14 @@ function executeAITurn() {
     });
 
     action = () => {
-      // Use centralized animation function for AI too
+      // First update the display to ensure DOM is current
+      renderGame();
+
+      // Use the animation system for AI dice
       animateDieRoll(gameState.currentPlayer, bestDie, () => {
         const result = aiPlayer.rollSelectedDie(bestDie);
-        addLog(
-          `${aiPlayer.name} rolled their ${aiPlayer.dice[bestDie].template.name}`
-        );
+        renderGame();
 
-        renderGame(); // Update display with roll result
-
-        // Handle paytable completion for AI
         if (
           result &&
           result.completedPaytables &&
@@ -751,8 +819,6 @@ function executeAITurn() {
   if (action) {
     gameState.turnActionTaken = true;
     action();
-
-    renderGame();
 
     checkGameEnd();
 
@@ -775,24 +841,22 @@ function checkGameEnd() {
       document.getElementById(
         "winnerText"
       ).textContent = `${winner.name} Wins!`;
-      addLog(`🏆 ${winner.name} is the last survivor!`, "explosion");
+      toastManager.show(
+        `🏆 ${winner.name} is the last survivor!`,
+        "success",
+        10000
+      );
     } else {
       document.getElementById("winnerText").textContent = "Everyone Died!";
-      addLog(`💀 All players have been eliminated!`, "explosion");
+      toastManager.show(
+        `💀 All players have been eliminated!`,
+        "explosion",
+        10000
+      );
     }
 
     document.getElementById("gameOver").style.display = "flex";
   }
-}
-
-function addLog(message, type = "") {
-  const gameLog = document.getElementById("gameLog");
-  const logEntry = document.createElement("div");
-  logEntry.className = `log-entry ${type}`;
-  logEntry.textContent = message;
-
-  gameLog.appendChild(logEntry);
-  gameLog.scrollTop = gameLog.scrollHeight;
 }
 
 // Initialize game on load
