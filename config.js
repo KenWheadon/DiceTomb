@@ -3,7 +3,7 @@ const GAME_CONFIG = {
   // Player starting stats - Give players more initial power
   PLAYER_DEFAULTS: {
     startingLives: 3,
-    startingActions: 8, // Increased from 0 - players can act immediately
+    startingActions: 4, // Increased from 0 - players can act immediately
     startingDiceTemplate: "STANDARD",
   },
 
@@ -98,7 +98,7 @@ const GAME_CONFIG = {
     "💀": {
       name: "Skull Curse",
       effect: "Turn random die face to skull",
-      slotsNeeded: 3,
+      slotsNeeded: 2,
       replacementSymbol: "💀",
     },
     "⚰️": {
@@ -109,21 +109,21 @@ const GAME_CONFIG = {
     },
     "🏺": {
       name: "Tomb Curse",
-      effect: "All dice +6% explosion chance", // Increased from 5
-      slotsNeeded: 3,
-      explosionIncrease: 6,
+      effect: "All dice +10% explosion chance", // Increased from 5
+      slotsNeeded: 2,
+      explosionIncrease: 10,
     },
   },
 
   // AI behavior settings - More dynamic and interesting AI
   AI_SETTINGS: {
     maxDiceTarget: 4, // Increased from 3 - AI builds bigger collections
-    riskThreshold: 25, // Reduced from 30 - AI takes more risks
+    riskThreshold: 20, // Reduced from 30 - AI takes more risks
     forbiddenDiceChance: 0.4, // Increased from 0.3 - more exciting
     masterDiceActionThreshold: 25, // Reduced from 40 - faster upgrades
     forbiddenDiceActionThreshold: 20, // Reduced from 30 - earlier risky plays
     aggressionMultiplier: 1.2, // New - AI gets more aggressive over time
-    conservativeThreshold: 50, // New - explosion chance where AI becomes careful
+    conservativeThreshold: 33, // New - explosion chance where AI becomes careful
   },
 
   // Game flow settings - Faster, more responsive

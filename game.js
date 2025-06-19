@@ -695,11 +695,11 @@ function endTurn() {
     gameState.turnCount++;
   }
 
-  toastManager.show(
-    `${gameState.players[gameState.currentPlayer].name}'s turn`,
-    "info",
-    2000
-  );
+  //   toastManager.show(
+  //     `${gameState.players[gameState.currentPlayer].name}'s turn`,
+  //     "info",
+  //     2000
+  //   );
 
   renderGame();
 
