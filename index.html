@@ -217,7 +217,7 @@
       }
 
       .die-result {
-        font-size: 3em;
+        font-size: 2.5em;
         margin-bottom: 2px;
       }
 
@@ -614,6 +614,140 @@
     </div>
 
     <script>
+      // Game Configuration - All balanceable data
+      const GAME_CONFIG = {
+        // Player starting stats
+        PLAYER_DEFAULTS: {
+          startingLives: 3,
+          startingActions: 0,
+          startingDiceTemplate: "STANDARD",
+        },
+
+        // Dice mechanics
+        DICE_MECHANICS: {
+          explosionIncreasePerRoll: 2, // % increase per roll
+          corruptionSpreadAmount: 5, // % increase when other dice explode
+          maxDiceFaces: 8, // Maximum faces a die can have
+        },
+
+        // Dice face symbols
+        SYMBOLS: {
+          BONE: "🦴",
+          SKULL: "💀",
+          COFFIN: "⚰️",
+          TOMB: "🏺",
+          ACTION1: "①",
+          ACTION2: "②",
+          ACTION3: "③",
+          ACTION4: "④",
+          ACTION5: "⑤",
+          ACTION6: "⑥",
+          ACTION7: "⑦",
+          ACTION8: "⑧",
+          ACTION10: "⑩",
+          ACTION15: "⑮",
+          WILD: "🌟",
+        },
+
+        // Action values for each symbol
+        ACTION_VALUES: {
+          "①": 1,
+          "②": 2,
+          "③": 3,
+          "④": 4,
+          "⑤": 5,
+          "⑥": 6,
+          "⑦": 7,
+          "⑧": 8,
+          "⑩": 10,
+          "⑮": 15,
+        },
+
+        // Die templates
+        DIE_TEMPLATES: {
+          STANDARD: {
+            name: "Standard",
+            faces: ["🦴", "💀", "①", "②", "②", "③"],
+            cost: 0,
+            baseExplosion: 0,
+            description: "Basic starter die",
+          },
+          APPRENTICE: {
+            name: "Apprentice",
+            faces: ["⚰️", "💀", "②", "③", "④", "⑤"],
+            cost: 6,
+            baseExplosion: 0,
+            description: "Better actions",
+          },
+          MASTER: {
+            name: "Master",
+            faces: ["🏺", "⚰️", "🌟", "⑤", "⑥", "⑩"],
+            cost: 15,
+            baseExplosion: 0,
+            description: "High actions",
+          },
+          FORBIDDEN: {
+            name: "Forbidden",
+            faces: ["🦴", "💀", "⚰️", "🏺", "⑮", "⑩"],
+            cost: 30,
+            baseExplosion: 15,
+            description: "Extreme power",
+          },
+        },
+
+        // Curse effects configuration
+        CURSE_EFFECTS: {
+          "🦴": {
+            name: "Bone Curse",
+            effect: "Lose 5 actions",
+            slotsNeeded: 2,
+            actionLoss: 5,
+          },
+          "💀": {
+            name: "Skull Curse",
+            effect: "Turn random die face to skull",
+            slotsNeeded: 3,
+            replacementSymbol: "💀",
+          },
+          "⚰️": {
+            name: "Coffin Curse",
+            effect: "All opponents gain +3 actions",
+            slotsNeeded: 2,
+            opponentActionGain: 3,
+          },
+          "🏺": {
+            name: "Tomb Curse",
+            effect: "All dice +5% explosion chance",
+            slotsNeeded: 3,
+            explosionIncrease: 5,
+          },
+        },
+
+        // AI behavior settings
+        AI_SETTINGS: {
+          maxDiceTarget: 3, // AI tries to get this many dice
+          riskThreshold: 30, // Above this explosion %, AI is more cautious
+          forbiddenDiceChance: 0.3, // Chance AI buys risky forbidden dice
+          masterDiceActionThreshold: 40, // Actions needed before buying master dice
+          forbiddenDiceActionThreshold: 30, // Actions needed before considering forbidden dice
+        },
+
+        // Game flow settings
+        GAME_FLOW: {
+          animationDelays: {
+            dieRoll: 600, // ms for die roll animation
+            payTableEffect: 1000, // ms delay before curse effects trigger
+            turnTransition: 800, // ms delay between turns
+            aiThinking: 1200, // ms for AI "thinking" time
+          },
+        },
+      };
+
+      // Legacy symbol references for backward compatibility
+      const SYMBOLS = GAME_CONFIG.SYMBOLS;
+      const DIE_TEMPLATES = GAME_CONFIG.DIE_TEMPLATES;
+      const CURSE_EFFECTS = GAME_CONFIG.CURSE_EFFECTS;
+
       // Game State
       let gameState = {
         currentPlayer: 0,
@@ -621,105 +755,6 @@
         gameOver: false,
         turnActionTaken: false,
         shopOpen: false, // Track if dice shop is open
-      };
-
-      // Dice face symbols
-      const SYMBOLS = {
-        BONE: "🦴",
-        SKULL: "💀",
-        COFFIN: "⚰️",
-        TOMB: "🏺",
-        ACTION1: "①",
-        ACTION2: "②",
-        ACTION3: "③",
-        ACTION4: "④",
-        ACTION5: "⑤",
-        ACTION6: "⑥",
-        ACTION7: "⑦",
-        ACTION8: "⑧",
-        ACTION10: "⑩",
-        ACTION15: "⑮",
-        WILD: "🌟",
-      };
-
-      // Die templates
-      const DIE_TEMPLATES = {
-        STANDARD: {
-          name: "Standard",
-          faces: [
-            SYMBOLS.BONE,
-            SYMBOLS.SKULL,
-            SYMBOLS.COFFIN,
-            SYMBOLS.ACTION1,
-            SYMBOLS.ACTION2,
-            SYMBOLS.ACTION3,
-          ],
-          cost: 0,
-          baseExplosion: 0,
-        },
-        APPRENTICE: {
-          name: "Apprentice",
-          faces: [
-            SYMBOLS.BONE,
-            SYMBOLS.SKULL,
-            SYMBOLS.ACTION2,
-            SYMBOLS.ACTION3,
-            SYMBOLS.ACTION4,
-            SYMBOLS.ACTION5,
-          ],
-          cost: 12,
-          baseExplosion: 0,
-        },
-        MASTER: {
-          name: "Master",
-          faces: [
-            SYMBOLS.BONE,
-            SYMBOLS.SKULL,
-            SYMBOLS.ACTION4,
-            SYMBOLS.ACTION5,
-            SYMBOLS.ACTION6,
-            SYMBOLS.ACTION7,
-          ],
-          cost: 25,
-          baseExplosion: 0,
-        },
-        FORBIDDEN: {
-          name: "Forbidden",
-          faces: [
-            SYMBOLS.BONE,
-            SYMBOLS.SKULL,
-            SYMBOLS.COFFIN,
-            SYMBOLS.TOMB,
-            SYMBOLS.ACTION8,
-            SYMBOLS.ACTION10,
-          ],
-          cost: 25,
-          baseExplosion: 15,
-        },
-      };
-
-      // Curse effects
-      const CURSE_EFFECTS = {
-        [SYMBOLS.BONE]: {
-          name: "Bone Curse",
-          effect: "Lose 5 actions",
-          slotsNeeded: 3,
-        },
-        [SYMBOLS.SKULL]: {
-          name: "Skull Curse",
-          effect: "Turn random die face to skull",
-          slotsNeeded: 3,
-        },
-        [SYMBOLS.COFFIN]: {
-          name: "Coffin Curse",
-          effect: "All opponents gain +3 actions",
-          slotsNeeded: 3,
-        },
-        [SYMBOLS.TOMB]: {
-          name: "Tomb Curse",
-          effect: "All dice +5% explosion chance",
-          slotsNeeded: 3,
-        },
       };
 
       class Die {
@@ -734,7 +769,8 @@
 
         roll() {
           this.rollCount++;
-          this.explosionChance += 2; // Increase by 2% per roll
+          this.explosionChance +=
+            GAME_CONFIG.DICE_MECHANICS.explosionIncreasePerRoll;
 
           // Check for explosion
           if (Math.random() * 100 < this.explosionChance) {
@@ -760,7 +796,7 @@
         }
 
         addWildFace() {
-          if (this.faces.length < 8) {
+          if (this.faces.length < GAME_CONFIG.DICE_MECHANICS.maxDiceFaces) {
             this.faces.push(SYMBOLS.WILD);
             this.explosionChance += 10;
             return true;
@@ -774,9 +810,14 @@
           this.name = name;
           this.id = id;
           this.isAI = isAI;
-          this.lives = 3;
-          this.actions = 0;
-          this.dice = [new Die(DIE_TEMPLATES.STANDARD, 0)];
+          this.lives = GAME_CONFIG.PLAYER_DEFAULTS.startingLives;
+          this.actions = GAME_CONFIG.PLAYER_DEFAULTS.startingActions;
+          this.dice = [
+            new Die(
+              DIE_TEMPLATES[GAME_CONFIG.PLAYER_DEFAULTS.startingDiceTemplate],
+              0
+            ),
+          ];
           this.paytables = this.initPaytables();
           this.eliminated = false;
         }
@@ -812,9 +853,9 @@
 
           switch (symbol) {
             case SYMBOLS.BONE:
-              this.actions = Math.max(0, this.actions - 5);
+              this.actions = Math.max(0, this.actions - effect.actionLoss);
               addLog(
-                `${this.name} triggered Bone Curse: Lost 5 actions!`,
+                `${this.name} triggered ${effect.name}: Lost ${effect.actionLoss} actions!`,
                 "curse"
               );
               break;
@@ -826,9 +867,9 @@
                 const randomFaceIndex = Math.floor(
                   Math.random() * randomDie.faces.length
                 );
-                randomDie.faces[randomFaceIndex] = SYMBOLS.SKULL;
+                randomDie.faces[randomFaceIndex] = effect.replacementSymbol;
                 addLog(
-                  `${this.name} triggered Skull Curse: Random die face turned to skull!`,
+                  `${this.name} triggered ${effect.name}: Random die face turned to skull!`,
                   "curse"
                 );
               }
@@ -837,21 +878,21 @@
             case SYMBOLS.COFFIN:
               gameState.players.forEach((player) => {
                 if (player.id !== this.id && !player.eliminated) {
-                  player.actions += 3;
+                  player.actions += effect.opponentActionGain;
                 }
               });
               addLog(
-                `${this.name} triggered Coffin Curse: All opponents gained 3 actions!`,
+                `${this.name} triggered ${effect.name}: All opponents gained ${effect.opponentActionGain} actions!`,
                 "curse"
               );
               break;
 
             case SYMBOLS.TOMB:
               this.dice.forEach((die) => {
-                die.explosionChance += 5;
+                die.explosionChance += effect.explosionIncrease;
               });
               addLog(
-                `${this.name} triggered Tomb Curse: All dice explosion chance increased by 5%!`,
+                `${this.name} triggered ${effect.name}: All dice explosion chance increased by ${effect.explosionIncrease}%!`,
                 "curse"
               );
               break;
@@ -870,7 +911,8 @@
 
             // Corruption spread
             this.dice.forEach((remainingDie) => {
-              remainingDie.explosionChance += 5;
+              remainingDie.explosionChance +=
+                GAME_CONFIG.DICE_MECHANICS.corruptionSpreadAmount;
             });
 
             addLog(
@@ -941,19 +983,7 @@
         }
 
         getActionValue(symbol) {
-          const values = {
-            [SYMBOLS.ACTION1]: 1,
-            [SYMBOLS.ACTION2]: 2,
-            [SYMBOLS.ACTION3]: 3,
-            [SYMBOLS.ACTION4]: 4,
-            [SYMBOLS.ACTION5]: 5,
-            [SYMBOLS.ACTION6]: 6,
-            [SYMBOLS.ACTION7]: 7,
-            [SYMBOLS.ACTION8]: 8,
-            [SYMBOLS.ACTION10]: 10,
-            [SYMBOLS.ACTION15]: 15,
-          };
-          return values[symbol] || 0;
+          return GAME_CONFIG.ACTION_VALUES[symbol] || 0;
         }
 
         canAfford(cost) {
@@ -981,7 +1011,14 @@
         }
 
         canAffordAnyDie() {
-          return this.canAfford(12) || this.canAfford(25); // Cheapest purchasable die is 12
+          // Find cheapest purchasable die
+          const purchasableDice = Object.values(DIE_TEMPLATES).filter(
+            (template) => template.cost > 0
+          );
+          const cheapestCost = Math.min(
+            ...purchasableDice.map((template) => template.cost)
+          );
+          return this.canAfford(cheapestCost);
         }
       }
 
@@ -1151,65 +1188,107 @@
                                     <div class="shop-title">🎲 Available Dice 🎲</div>
                                     <div class="shop-items">
                                         <div class="shop-item ${
-                                          player.canAfford(12)
+                                          player.canAfford(
+                                            DIE_TEMPLATES.APPRENTICE.cost
+                                          )
                                             ? "affordable"
                                             : ""
                                         }" 
                                              onclick="buyDie('APPRENTICE')" 
                                              ${
-                                               player.canAfford(12)
+                                               player.canAfford(
+                                                 DIE_TEMPLATES.APPRENTICE.cost
+                                               )
                                                  ? ""
                                                  : 'style="pointer-events: none;"'
                                              }>
                                             <div class="item-header">
-                                                <div class="item-name">Apprentice Die</div>
-                                                <div class="item-cost">12 ⚡</div>
+                                                <div class="item-name">${
+                                                  DIE_TEMPLATES.APPRENTICE.name
+                                                } Die</div>
+                                                <div class="item-cost">${
+                                                  DIE_TEMPLATES.APPRENTICE.cost
+                                                } ⚡</div>
                                             </div>
                                             <div class="item-details">
-                                                <span>Better actions</span>
-                                                <span class="item-explosion">0% base</span>
+                                                <span>${
+                                                  DIE_TEMPLATES.APPRENTICE
+                                                    .description
+                                                }</span>
+                                                <span class="item-explosion">${
+                                                  DIE_TEMPLATES.APPRENTICE
+                                                    .baseExplosion
+                                                }% base</span>
                                             </div>
                                         </div>
                                         
                                         <div class="shop-item ${
-                                          player.canAfford(25)
+                                          player.canAfford(
+                                            DIE_TEMPLATES.MASTER.cost
+                                          )
                                             ? "affordable"
                                             : ""
                                         }" 
                                              onclick="buyDie('MASTER')" 
                                              ${
-                                               player.canAfford(25)
+                                               player.canAfford(
+                                                 DIE_TEMPLATES.MASTER.cost
+                                               )
                                                  ? ""
                                                  : 'style="pointer-events: none;"'
                                              }>
                                             <div class="item-header">
-                                                <div class="item-name">Master Die</div>
-                                                <div class="item-cost">25 ⚡</div>
+                                                <div class="item-name">${
+                                                  DIE_TEMPLATES.MASTER.name
+                                                } Die</div>
+                                                <div class="item-cost">${
+                                                  DIE_TEMPLATES.MASTER.cost
+                                                } ⚡</div>
                                             </div>
                                             <div class="item-details">
-                                                <span>High actions</span>
-                                                <span class="item-explosion">0% base</span>
+                                                <span>${
+                                                  DIE_TEMPLATES.MASTER
+                                                    .description
+                                                }</span>
+                                                <span class="item-explosion">${
+                                                  DIE_TEMPLATES.MASTER
+                                                    .baseExplosion
+                                                }% base</span>
                                             </div>
                                         </div>
                                         
                                         <div class="shop-item ${
-                                          player.canAfford(25)
+                                          player.canAfford(
+                                            DIE_TEMPLATES.FORBIDDEN.cost
+                                          )
                                             ? "affordable"
                                             : ""
                                         }" 
                                              onclick="buyDie('FORBIDDEN')" 
                                              ${
-                                               player.canAfford(25)
+                                               player.canAfford(
+                                                 DIE_TEMPLATES.FORBIDDEN.cost
+                                               )
                                                  ? ""
                                                  : 'style="pointer-events: none;"'
                                              }>
                                             <div class="item-header">
-                                                <div class="item-name">Forbidden Die</div>
-                                                <div class="item-cost">25 ⚡</div>
+                                                <div class="item-name">${
+                                                  DIE_TEMPLATES.FORBIDDEN.name
+                                                } Die</div>
+                                                <div class="item-cost">${
+                                                  DIE_TEMPLATES.FORBIDDEN.cost
+                                                } ⚡</div>
                                             </div>
                                             <div class="item-details">
-                                                <span>Extreme power</span>
-                                                <span class="item-explosion">15% base</span>
+                                                <span>${
+                                                  DIE_TEMPLATES.FORBIDDEN
+                                                    .description
+                                                }</span>
+                                                <span class="item-explosion">${
+                                                  DIE_TEMPLATES.FORBIDDEN
+                                                    .baseExplosion
+                                                }% base</span>
                                             </div>
                                         </div>
                                     </div>
@@ -1299,9 +1378,9 @@
                 // Continue to next turn
                 setTimeout(() => {
                   endTurn();
-                }, 800);
+                }, GAME_CONFIG.GAME_FLOW.animationDelays.turnTransition);
               }
-            }, 1000);
+            }, GAME_CONFIG.GAME_FLOW.animationDelays.payTableEffect);
           } else {
             // No paytables completed, proceed directly
             checkGameEnd();
@@ -1309,10 +1388,10 @@
             if (!gameState.gameOver) {
               setTimeout(() => {
                 endTurn();
-              }, 800);
+              }, GAME_CONFIG.GAME_FLOW.animationDelays.turnTransition);
             }
           }
-        }, 600);
+        }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
       }
 
       function buyDie(templateName) {
@@ -1332,7 +1411,7 @@
             // Auto-end turn after action
             setTimeout(() => {
               endTurn();
-            }, 800);
+            }, GAME_CONFIG.GAME_FLOW.animationDelays.turnTransition);
           }
         }
       }
@@ -1359,7 +1438,7 @@
         ) {
           setTimeout(() => {
             executeAITurn();
-          }, 1200);
+          }, GAME_CONFIG.GAME_FLOW.animationDelays.aiThinking);
         }
       }
 
@@ -1369,9 +1448,13 @@
         if (aiPlayer.eliminated || gameState.gameOver) return;
 
         // AI Decision Logic
-        const canBuyApprentice = aiPlayer.canAfford(12);
-        const canBuyMaster = aiPlayer.canAfford(25);
-        const canBuyForbidden = aiPlayer.canAfford(25);
+        const canBuyApprentice = aiPlayer.canAfford(
+          DIE_TEMPLATES.APPRENTICE.cost
+        );
+        const canBuyMaster = aiPlayer.canAfford(DIE_TEMPLATES.MASTER.cost);
+        const canBuyForbidden = aiPlayer.canAfford(
+          DIE_TEMPLATES.FORBIDDEN.cost
+        );
 
         // AI Strategy: Early game focus on dice collection, late game focus on rolling
         const totalDice = aiPlayer.dice.length;
@@ -1382,22 +1465,31 @@
         let action = null;
 
         // Decision tree based on AI strategy
-        if (totalDice < 2 && canBuyApprentice) {
+        if (
+          totalDice < GAME_CONFIG.AI_SETTINGS.maxDiceTarget &&
+          canBuyApprentice
+        ) {
           // Early game: buy more dice
           action = () => {
             aiPlayer.buyDie(DIE_TEMPLATES.APPRENTICE);
             addLog(`${aiPlayer.name} bought an Apprentice Die`);
           };
-        } else if (aiPlayer.actions >= 40 && canBuyMaster && totalDice < 3) {
+        } else if (
+          aiPlayer.actions >=
+            GAME_CONFIG.AI_SETTINGS.masterDiceActionThreshold &&
+          canBuyMaster &&
+          totalDice < GAME_CONFIG.AI_SETTINGS.maxDiceTarget
+        ) {
           // Mid game: upgrade to better dice
           action = () => {
             aiPlayer.buyDie(DIE_TEMPLATES.MASTER);
             addLog(`${aiPlayer.name} bought a Master Die`);
           };
         } else if (
-          aiPlayer.actions >= 30 &&
+          aiPlayer.actions >=
+            GAME_CONFIG.AI_SETTINGS.forbiddenDiceActionThreshold &&
           canBuyForbidden &&
-          Math.random() < 0.3
+          Math.random() < GAME_CONFIG.AI_SETTINGS.forbiddenDiceChance
         ) {
           // High risk play: buy forbidden die
           action = () => {
@@ -1412,8 +1504,8 @@
 
           aiPlayer.dice.forEach((die, index) => {
             // Score based on reward potential minus explosion risk
-            const actionFaces = die.faces.filter((face) =>
-              face.match(/[①②③④⑤⑥⑦⑧⑩⑮]/)
+            const actionFaces = die.faces.filter(
+              (face) => GAME_CONFIG.ACTION_VALUES[face]
             );
             const rewardPotential = actionFaces.reduce(
               (sum, face) => sum + aiPlayer.getActionValue(face),
@@ -1445,7 +1537,7 @@
                   aiPlayer.triggerCursePaytable(symbol);
                 });
                 renderGame();
-              }, 1000);
+              }, GAME_CONFIG.GAME_FLOW.animationDelays.payTableEffect);
             }
           };
         }
@@ -1462,7 +1554,7 @@
           if (!gameState.gameOver) {
             setTimeout(() => {
               endTurn();
-            }, 1200);
+            }, GAME_CONFIG.GAME_FLOW.animationDelays.aiThinking);
           }
         }
       }
