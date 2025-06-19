@@ -5,6 +5,7 @@ let gameState = {
   gameOver: false,
   turnActionTaken: false,
   shopOpen: false, // Track if dice shop is open
+  turnCount: 0, // Track game progression
 };
 
 class Die {
@@ -69,6 +70,7 @@ class Player {
     ];
     this.paytables = this.initPaytables();
     this.eliminated = false;
+    this.aggressionLevel = 1.0; // New: AI personality modifier
   }
 
   initPaytables() {
@@ -269,6 +271,27 @@ class Player {
   }
 }
 
+// Centralized dice animation function
+function animateDieRoll(playerId, dieIndex, callback) {
+  const playerAreas = document.querySelectorAll(".player-area");
+  const currentPlayerArea = playerAreas[playerId];
+  const diceInThisArea = currentPlayerArea.querySelectorAll(".die");
+  const dieElement = diceInThisArea[dieIndex];
+
+  if (dieElement) {
+    dieElement.classList.add("rolling");
+    setTimeout(() => {
+      dieElement.classList.remove("rolling");
+      if (callback) callback();
+    }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
+  } else {
+    // Fallback if element not found
+    setTimeout(() => {
+      if (callback) callback();
+    }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
+  }
+}
+
 function initGame() {
   gameState = {
     currentPlayer: 0,
@@ -281,11 +304,17 @@ function initGame() {
     gameOver: false,
     turnActionTaken: false,
     shopOpen: false,
+    turnCount: 0,
   };
+
+  // Give AI players unique personalities
+  gameState.players[1].aggressionLevel = 0.8; // Conservative
+  gameState.players[2].aggressionLevel = 1.3; // Aggressive
+  gameState.players[3].aggressionLevel = 1.0; // Balanced
 
   document.getElementById("gameOver").style.display = "none";
   document.getElementById("gameLog").innerHTML =
-    '<div class="log-entry">Game started! You vs 3 AI opponents. Each player begins with 1 standard die and 3 lives.</div>';
+    '<div class="log-entry">Game started! You vs 3 AI opponents. Each player begins with 1 standard die, 3 lives, and 8 actions!</div>';
 
   renderGame();
 }
@@ -363,6 +392,42 @@ function renderPlayers() {
       index === gameState.currentPlayer ? "active" : ""
     } ${player.eliminated ? "eliminated" : ""}`;
 
+    // Build dice shop HTML with new Journeyman tier
+    const diceShopHTML = `
+      <div class="dice-shop ${gameState.shopOpen ? "open" : ""}">
+        <div class="shop-title">🎲 Available Dice 🎲</div>
+        <div class="shop-items">
+          ${["APPRENTICE", "JOURNEYMAN", "MASTER", "FORBIDDEN"]
+            .map((templateName) => {
+              const template = DIE_TEMPLATES[templateName];
+              return `
+                <div class="shop-item ${
+                  player.canAfford(template.cost) ? "affordable" : ""
+                }" 
+                     onclick="buyDie('${templateName}')" 
+                     ${
+                       player.canAfford(template.cost)
+                         ? ""
+                         : 'style="pointer-events: none;"'
+                     }>
+                    <div class="item-header">
+                        <div class="item-name">${template.name} Die</div>
+                        <div class="item-cost">${template.cost} ⚡</div>
+                    </div>
+                    <div class="item-details">
+                        <span>${template.description}</span>
+                        <span class="item-explosion">${
+                          template.baseExplosion
+                        }% base</span>
+                    </div>
+                </div>
+              `;
+            })
+            .join("")}
+        </div>
+      </div>
+    `;
+
     playerArea.innerHTML = `
                 <div class="player-header">
                     <div class="player-name">${player.name}</div>
@@ -423,115 +488,7 @@ function renderPlayers() {
                                 🛒 Dice Shop ${gameState.shopOpen ? "▲" : "▼"}
                             </button>
                             
-                            <div class="dice-shop ${
-                              gameState.shopOpen ? "open" : ""
-                            }">
-                                <div class="shop-title">🎲 Available Dice 🎲</div>
-                                <div class="shop-items">
-                                    <div class="shop-item ${
-                                      player.canAfford(
-                                        DIE_TEMPLATES.APPRENTICE.cost
-                                      )
-                                        ? "affordable"
-                                        : ""
-                                    }" 
-                                         onclick="buyDie('APPRENTICE')" 
-                                         ${
-                                           player.canAfford(
-                                             DIE_TEMPLATES.APPRENTICE.cost
-                                           )
-                                             ? ""
-                                             : 'style="pointer-events: none;"'
-                                         }>
-                                        <div class="item-header">
-                                            <div class="item-name">${
-                                              DIE_TEMPLATES.APPRENTICE.name
-                                            } Die</div>
-                                            <div class="item-cost">${
-                                              DIE_TEMPLATES.APPRENTICE.cost
-                                            } ⚡</div>
-                                        </div>
-                                        <div class="item-details">
-                                            <span>${
-                                              DIE_TEMPLATES.APPRENTICE
-                                                .description
-                                            }</span>
-                                            <span class="item-explosion">${
-                                              DIE_TEMPLATES.APPRENTICE
-                                                .baseExplosion
-                                            }% base</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="shop-item ${
-                                      player.canAfford(
-                                        DIE_TEMPLATES.MASTER.cost
-                                      )
-                                        ? "affordable"
-                                        : ""
-                                    }" 
-                                         onclick="buyDie('MASTER')" 
-                                         ${
-                                           player.canAfford(
-                                             DIE_TEMPLATES.MASTER.cost
-                                           )
-                                             ? ""
-                                             : 'style="pointer-events: none;"'
-                                         }>
-                                        <div class="item-header">
-                                            <div class="item-name">${
-                                              DIE_TEMPLATES.MASTER.name
-                                            } Die</div>
-                                            <div class="item-cost">${
-                                              DIE_TEMPLATES.MASTER.cost
-                                            } ⚡</div>
-                                        </div>
-                                        <div class="item-details">
-                                            <span>${
-                                              DIE_TEMPLATES.MASTER.description
-                                            }</span>
-                                            <span class="item-explosion">${
-                                              DIE_TEMPLATES.MASTER.baseExplosion
-                                            }% base</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="shop-item ${
-                                      player.canAfford(
-                                        DIE_TEMPLATES.FORBIDDEN.cost
-                                      )
-                                        ? "affordable"
-                                        : ""
-                                    }" 
-                                         onclick="buyDie('FORBIDDEN')" 
-                                         ${
-                                           player.canAfford(
-                                             DIE_TEMPLATES.FORBIDDEN.cost
-                                           )
-                                             ? ""
-                                             : 'style="pointer-events: none;"'
-                                         }>
-                                        <div class="item-header">
-                                            <div class="item-name">${
-                                              DIE_TEMPLATES.FORBIDDEN.name
-                                            } Die</div>
-                                            <div class="item-cost">${
-                                              DIE_TEMPLATES.FORBIDDEN.cost
-                                            } ⚡</div>
-                                        </div>
-                                        <div class="item-details">
-                                            <span>${
-                                              DIE_TEMPLATES.FORBIDDEN
-                                                .description
-                                            }</span>
-                                            <span class="item-explosion">${
-                                              DIE_TEMPLATES.FORBIDDEN
-                                                .baseExplosion
-                                            }% base</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            ${diceShopHTML}
                         `
                             : `
                             <p style="color: #ffd93d; font-style: italic; font-size: 0.8em;">Turn action completed. Turn ending automatically...</p>
@@ -580,20 +537,8 @@ function rollDie(playerId, dieIndex) {
   gameState.turnActionTaken = true;
   renderGame(); // Update UI to show action taken
 
-  // Find the specific die element for animation
-  const playerAreas = document.querySelectorAll(".player-area");
-  const currentPlayerArea = playerAreas[playerId];
-  const diceInThisArea = currentPlayerArea.querySelectorAll(".die");
-  const dieElement = diceInThisArea[dieIndex];
-
-  if (dieElement) {
-    dieElement.classList.add("rolling");
-    setTimeout(() => {
-      dieElement.classList.remove("rolling");
-    }, 600);
-  }
-
-  setTimeout(() => {
+  // Use centralized animation function
+  animateDieRoll(playerId, dieIndex, () => {
     // Execute roll and immediately update display with result + paytable filling
     const result = player.rollSelectedDie(dieIndex);
     renderGame(); // Show die result and filled paytable immediately
@@ -630,7 +575,7 @@ function rollDie(playerId, dieIndex) {
         }, GAME_CONFIG.GAME_FLOW.animationDelays.turnTransition);
       }
     }
-  }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
+  });
 }
 
 function buyDie(templateName) {
@@ -665,6 +610,11 @@ function endTurn() {
       (gameState.currentPlayer + 1) % gameState.players.length;
   } while (gameState.players[gameState.currentPlayer].eliminated);
 
+  // Increment turn counter when it returns to player 0
+  if (gameState.currentPlayer === 0) {
+    gameState.turnCount++;
+  }
+
   addLog(`--- ${gameState.players[gameState.currentPlayer].name}'s turn ---`);
   renderGame();
 
@@ -681,12 +631,18 @@ function executeAITurn() {
 
   if (aiPlayer.eliminated || gameState.gameOver) return;
 
-  // AI Decision Logic
+  // Update AI aggression based on game state
+  const gameProgression = Math.min(gameState.turnCount / 10, 1.0);
+  const currentAggression =
+    aiPlayer.aggressionLevel *
+    (1 + gameProgression * GAME_CONFIG.AI_SETTINGS.aggressionMultiplier);
+
+  // AI Decision Logic - More sophisticated
   const canBuyApprentice = aiPlayer.canAfford(DIE_TEMPLATES.APPRENTICE.cost);
+  const canBuyJourneyman = aiPlayer.canAfford(DIE_TEMPLATES.JOURNEYMAN.cost);
   const canBuyMaster = aiPlayer.canAfford(DIE_TEMPLATES.MASTER.cost);
   const canBuyForbidden = aiPlayer.canAfford(DIE_TEMPLATES.FORBIDDEN.cost);
 
-  // AI Strategy: Early game focus on dice collection, late game focus on rolling
   const totalDice = aiPlayer.dice.length;
   const avgExplosionChance =
     aiPlayer.dice.reduce((sum, die) => sum + die.explosionChance, 0) /
@@ -694,50 +650,69 @@ function executeAITurn() {
 
   let action = null;
 
-  // Decision tree based on AI strategy
-  if (totalDice < GAME_CONFIG.AI_SETTINGS.maxDiceTarget && canBuyApprentice) {
-    // Early game: buy more dice
-    action = () => {
-      aiPlayer.buyDie(DIE_TEMPLATES.APPRENTICE);
-      addLog(`${aiPlayer.name} bought an Apprentice Die`);
-    };
-  } else if (
-    aiPlayer.actions >= GAME_CONFIG.AI_SETTINGS.masterDiceActionThreshold &&
-    canBuyMaster &&
-    totalDice < GAME_CONFIG.AI_SETTINGS.maxDiceTarget
-  ) {
-    // Mid game: upgrade to better dice
-    action = () => {
-      aiPlayer.buyDie(DIE_TEMPLATES.MASTER);
-      addLog(`${aiPlayer.name} bought a Master Die`);
-    };
-  } else if (
-    aiPlayer.actions >= GAME_CONFIG.AI_SETTINGS.forbiddenDiceActionThreshold &&
-    canBuyForbidden &&
-    Math.random() < GAME_CONFIG.AI_SETTINGS.forbiddenDiceChance
-  ) {
-    // High risk play: buy forbidden die
-    action = () => {
-      aiPlayer.buyDie(DIE_TEMPLATES.FORBIDDEN);
-      addLog(`${aiPlayer.name} bought a Forbidden Die`);
-    };
-  } else {
-    // Default: roll a die
-    // Choose die with balance of reward potential vs explosion risk
+  // More dynamic decision making
+  if (totalDice < GAME_CONFIG.AI_SETTINGS.maxDiceTarget * currentAggression) {
+    // Prioritize dice collection based on aggression and resources
+    if (
+      canBuyForbidden &&
+      aiPlayer.actions >= 35 &&
+      Math.random() <
+        GAME_CONFIG.AI_SETTINGS.forbiddenDiceChance * currentAggression
+    ) {
+      action = () => {
+        aiPlayer.buyDie(DIE_TEMPLATES.FORBIDDEN);
+        addLog(`${aiPlayer.name} bought a Forbidden Die`);
+      };
+    } else if (
+      canBuyMaster &&
+      aiPlayer.actions >= GAME_CONFIG.AI_SETTINGS.masterDiceActionThreshold
+    ) {
+      action = () => {
+        aiPlayer.buyDie(DIE_TEMPLATES.MASTER);
+        addLog(`${aiPlayer.name} bought a Master Die`);
+      };
+    } else if (canBuyJourneyman && aiPlayer.actions >= 15) {
+      action = () => {
+        aiPlayer.buyDie(DIE_TEMPLATES.JOURNEYMAN);
+        addLog(`${aiPlayer.name} bought a Journeyman Die`);
+      };
+    } else if (canBuyApprentice) {
+      action = () => {
+        aiPlayer.buyDie(DIE_TEMPLATES.APPRENTICE);
+        addLog(`${aiPlayer.name} bought an Apprentice Die`);
+      };
+    }
+  }
+
+  // If no dice purchase, roll a die
+  if (!action) {
+    // Smarter die selection
     let bestDie = 0;
-    let bestScore = -1;
+    let bestScore = -1000;
 
     aiPlayer.dice.forEach((die, index) => {
-      // Score based on reward potential minus explosion risk
+      // Calculate expected value
       const actionFaces = die.faces.filter(
         (face) => GAME_CONFIG.ACTION_VALUES[face]
       );
-      const rewardPotential = actionFaces.reduce(
-        (sum, face) => sum + aiPlayer.getActionValue(face),
-        0
-      );
-      const explosionPenalty = die.explosionChance / 10; // Less penalty for explosion
-      const score = rewardPotential - explosionPenalty;
+      const avgActionValue =
+        actionFaces.reduce(
+          (sum, face) => sum + aiPlayer.getActionValue(face),
+          0
+        ) / die.faces.length;
+
+      // Risk assessment
+      const explosionPenalty =
+        die.explosionChance * 0.1 * (2 - currentAggression); // Aggressive AI cares less about explosion
+      const score = avgActionValue - explosionPenalty;
+
+      // Conservative AI avoids high explosion dice
+      if (
+        die.explosionChance > GAME_CONFIG.AI_SETTINGS.conservativeThreshold &&
+        currentAggression < 1.0
+      ) {
+        score *= 0.5;
+      }
 
       if (score > bestScore) {
         bestScore = score;
@@ -746,22 +721,8 @@ function executeAITurn() {
     });
 
     action = () => {
-      // Find the AI's die element for animation
-      const playerAreas = document.querySelectorAll(".player-area");
-      const currentPlayerArea = playerAreas[gameState.currentPlayer];
-      const diceInThisArea = currentPlayerArea.querySelectorAll(".die");
-      const dieElement = diceInThisArea[bestDie];
-
-      // Add rolling animation to AI's die
-      if (dieElement) {
-        dieElement.classList.add("rolling");
-        setTimeout(() => {
-          dieElement.classList.remove("rolling");
-        }, 600);
-      }
-
-      // Execute the roll after animation delay (same timing as human player)
-      setTimeout(() => {
+      // Use centralized animation function for AI too
+      animateDieRoll(gameState.currentPlayer, bestDie, () => {
         const result = aiPlayer.rollSelectedDie(bestDie);
         addLog(
           `${aiPlayer.name} rolled their ${aiPlayer.dice[bestDie].template.name}`
@@ -782,7 +743,7 @@ function executeAITurn() {
             renderGame();
           }, GAME_CONFIG.GAME_FLOW.animationDelays.payTableEffect);
         }
-      }, GAME_CONFIG.GAME_FLOW.animationDelays.dieRoll);
+      });
     };
   }
 

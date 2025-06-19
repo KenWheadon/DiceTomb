@@ -1,16 +1,16 @@
 // Game Configuration - All balanceable data
 const GAME_CONFIG = {
-  // Player starting stats
+  // Player starting stats - Give players more initial power
   PLAYER_DEFAULTS: {
     startingLives: 3,
-    startingActions: 0,
+    startingActions: 8, // Increased from 0 - players can act immediately
     startingDiceTemplate: "STANDARD",
   },
 
-  // Dice mechanics
+  // Dice mechanics - Faster, more exciting progression
   DICE_MECHANICS: {
-    explosionIncreasePerRoll: 2, // % increase per roll
-    corruptionSpreadAmount: 5, // % increase when other dice explode
+    explosionIncreasePerRoll: 4, // Increased from 2 - faster escalation
+    corruptionSpreadAmount: 3, // Reduced from 5 - less punishing
     maxDiceFaces: 8, // Maximum faces a die can have
   },
 
@@ -47,45 +47,53 @@ const GAME_CONFIG = {
     "⑮": 15,
   },
 
-  // Die templates
+  // Die templates - Smoother cost progression and better balance
   DIE_TEMPLATES: {
     STANDARD: {
       name: "Standard",
-      faces: ["🦴", "💀", "①", "②", "②", "③"],
+      faces: ["🦴", "💀", "①", "②", "③", "③"], // Better early game value
       cost: 0,
       baseExplosion: 0,
       description: "Basic starter die",
     },
     APPRENTICE: {
       name: "Apprentice",
-      faces: ["⚰️", "💀", "②", "③", "④", "⑤"],
-      cost: 6,
+      faces: ["⚰️", "💀", "②", "③", "④", "④"], // More consistent value
+      cost: 5, // Reduced from 6 - easier to afford
       baseExplosion: 0,
       description: "Better actions",
     },
+    JOURNEYMAN: {
+      // New tier for smoother progression
+      name: "Journeyman",
+      faces: ["🏺", "⚰️", "③", "④", "⑤", "⑥"],
+      cost: 10, // Fills gap between apprentice and master
+      baseExplosion: 2,
+      description: "Solid mid-game die",
+    },
     MASTER: {
       name: "Master",
-      faces: ["🏺", "⚰️", "🌟", "⑤", "⑥", "⑩"],
-      cost: 15,
-      baseExplosion: 0,
-      description: "High actions",
+      faces: ["🏺", "⚰️", "🌟", "⑤", "⑥", "⑧"], // Reduced power slightly
+      cost: 18, // Reduced from 15 but adjusted for new tier
+      baseExplosion: 5, // Increased from 0 - risk/reward
+      description: "High actions with risk",
     },
     FORBIDDEN: {
       name: "Forbidden",
       faces: ["🦴", "💀", "⚰️", "🏺", "⑮", "⑩"],
-      cost: 30,
-      baseExplosion: 15,
-      description: "Extreme power",
+      cost: 28, // Reduced from 30
+      baseExplosion: 12, // Reduced from 15 - less punishing
+      description: "Extreme power, extreme risk",
     },
   },
 
-  // Curse effects configuration
+  // Curse effects configuration - More balanced effects
   CURSE_EFFECTS: {
     "🦴": {
       name: "Bone Curse",
-      effect: "Lose 5 actions",
+      effect: "Lose 4 actions", // Reduced from 5
       slotsNeeded: 2,
-      actionLoss: 5,
+      actionLoss: 4,
     },
     "💀": {
       name: "Skull Curse",
@@ -95,34 +103,36 @@ const GAME_CONFIG = {
     },
     "⚰️": {
       name: "Coffin Curse",
-      effect: "All opponents gain +3 actions",
+      effect: "All opponents gain +2 actions", // Reduced from 3
       slotsNeeded: 2,
-      opponentActionGain: 3,
+      opponentActionGain: 2,
     },
     "🏺": {
       name: "Tomb Curse",
-      effect: "All dice +5% explosion chance",
+      effect: "All dice +6% explosion chance", // Increased from 5
       slotsNeeded: 3,
-      explosionIncrease: 5,
+      explosionIncrease: 6,
     },
   },
 
-  // AI behavior settings
+  // AI behavior settings - More dynamic and interesting AI
   AI_SETTINGS: {
-    maxDiceTarget: 3, // AI tries to get this many dice
-    riskThreshold: 30, // Above this explosion %, AI is more cautious
-    forbiddenDiceChance: 0.3, // Chance AI buys risky forbidden dice
-    masterDiceActionThreshold: 40, // Actions needed before buying master dice
-    forbiddenDiceActionThreshold: 30, // Actions needed before considering forbidden dice
+    maxDiceTarget: 4, // Increased from 3 - AI builds bigger collections
+    riskThreshold: 25, // Reduced from 30 - AI takes more risks
+    forbiddenDiceChance: 0.4, // Increased from 0.3 - more exciting
+    masterDiceActionThreshold: 25, // Reduced from 40 - faster upgrades
+    forbiddenDiceActionThreshold: 20, // Reduced from 30 - earlier risky plays
+    aggressionMultiplier: 1.2, // New - AI gets more aggressive over time
+    conservativeThreshold: 50, // New - explosion chance where AI becomes careful
   },
 
-  // Game flow settings
+  // Game flow settings - Faster, more responsive
   GAME_FLOW: {
     animationDelays: {
-      dieRoll: 600, // ms for die roll animation
-      payTableEffect: 1000, // ms delay before curse effects trigger
-      turnTransition: 800, // ms delay between turns
-      aiThinking: 1200, // ms for AI "thinking" time
+      dieRoll: 400, // Reduced from 600 - faster rolls
+      payTableEffect: 600, // Reduced from 1000 - quicker curse resolution
+      turnTransition: 400, // Reduced from 800 - faster turns
+      aiThinking: 600, // Reduced from 1200 - less waiting
     },
   },
 };
